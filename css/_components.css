@@ -1,0 +1,825 @@
+/* css/_components.css */
+/* ================================================= */
+/* === REDIZAJN KOMPONENTOV (z des.html) =========== */
+/* ================================================= */
+
+/* === NOVÝ .btn SYSTÉM (z des.html) === */
+.btn {
+    padding: var(--space-3) var(--space-6);
+    border: none;
+    border-radius: var(--radius-md);
+    font-family: var(--font-body);
+    font-size: var(--font-size-sm);
+    font-weight: 600;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--space-2);
+    transition: all var(--duration-normal) var(--ease-spring);
+    text-decoration: none;
+    position: relative;
+    /* overflow: hidden; */ /* Odstránené kvôli badge */
+}
+
+.btn::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(
+        135deg,
+        rgba(255, 255, 255, 0.3) 0%,
+        rgba(255, 255, 255, 0) 100%
+    );
+    opacity: 0;
+    transition: opacity var(--duration-fast);
+}
+.btn:hover::before { opacity: 1; }
+
+.btn:disabled { 
+    cursor: not-allowed; 
+    background: var(--neutral-100); 
+    color: var(--neutral-400); 
+    box-shadow: none; 
+    transform: none;
+}
+.btn:hover:not(:disabled) { 
+    transform: translateY(-2px) scale(1.02); 
+    box-shadow: var(--shadow-lg); 
+}
+.btn:active:not(:disabled) {
+    transform: translateY(0) scale(0.98);
+}
+
+/* === VARIANTY TLAČIDIEL === */
+.btn--primary {
+    background: var(--primary-gradient);
+    color: white;
+    box-shadow: 0 4px 12px rgba(0, 64, 128, 0.3); /* Upravený tieň pre modrú */
+}
+.btn--primary:hover:not(:disabled) {
+    box-shadow: 0 8px 20px rgba(0, 64, 128, 0.4); /* Upravený tieň pre modrú */
+}
+
+.btn--secondary {
+    background: var(--surface-color);
+    color: var(--text-color);
+    border: 1px solid var(--border-color);
+}
+.btn--secondary:hover:not(:disabled) {
+    background: var(--neutral-100);
+    box-shadow: var(--shadow-md);
+}
+
+.btn--accent {
+    background: var(--accent-gradient);
+    color: var(--text-color); /* Upravená farba textu pre lepší kontrast so zlatou */
+    box-shadow: 0 4px 12px rgba(255, 152, 0, 0.3); /* Upravený tieň pre zlatú */
+}
+.btn--accent:hover:not(:disabled) {
+    box-shadow: 0 8px 20px rgba(255, 152, 0, 0.4); /* Upravený tieň pre zlatú */
+}
+
+/* === ŠTÝLY PRE STAVY APLIKÁCIE === */
+.btn--accent.ready { 
+    animation: pulse-accent 1.5s infinite; 
+}
+
+.btn.is-success {
+    background: var(--success-color);
+    color: white;
+    box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
+}
+.btn.is-success:hover:not(:disabled) {
+    box-shadow: 0 8px 20px rgba(16, 185, 129, 0.4);
+}
+
+.btn.loading {
+    transform: none; 
+    box-shadow: none;
+    cursor: wait;
+    background: var(--primary-light);
+    color: var(--primary-color); 
+    border: 1px solid var(--primary-color);
+}
+.btn.loading .btn-text {
+    position: relative;
+    z-index: 3; 
+}
+.btn.loading .btn-spinner {
+    display: inline-block; 
+    border: 2px solid var(--primary-color);
+    border-top: 2px solid transparent;
+    border-radius: 50%;
+    width: 1em;
+    height: 1em;
+    animation: spin 0.8s linear infinite;
+    margin-right: 0.5em;
+}
+.btn.loading i {
+    display: none;
+}
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+/* === KONIEC SYSTÉMU TLAČIDIEL === */
+
+
+/* === NOVÝ DIZAJN FORMULÁROVÝCH PRVKOV === */
+.select-item { 
+    display: flex; 
+    align-items: center; 
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-md);
+    transition: var(--transition); 
+    width: 100%; 
+    background-color: rgba(255, 255, 255, 0.7); /* ZMENA: Z var(--surface-color) */ 
+    box-shadow: var(--shadow-xs);
+    position: relative;
+}
+.select-item:focus-within {
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 3px var(--primary-light);
+}
+.select-item i { 
+    padding: 0 var(--space-3);
+    color: var(--text-secondary); 
+}
+/* === ZMENA: Selektor upravený z #okresny-urad na .custom-select-trigger === */
+.custom-select-trigger { 
+    padding: var(--space-3) var(--space-6) var(--space-3) 0;
+    border: none; 
+    background: none; 
+    font-size: var(--font-size-sm);
+    font-weight: 500; 
+    cursor: pointer; 
+    width: 100%; 
+    color: var(--text-color);
+    /* Pridané pre button */
+    text-align: left;
+    font-family: var(--font-body);
+}
+.custom-select-trigger:focus { outline: none; }
+/* === KONIEC ZMENY === */
+
+/* === PRIDANÉ: Vlastná šípka pre select box === */
+.select-item::after {
+    content: '';
+    position: absolute;
+    right: var(--space-4); /* 1rem */
+    top: 50%;
+    width: 0.5em; /* 8px */
+    height: 0.5em; /* 8px */
+    border-style: solid;
+    border-color: var(--text-secondary);
+    border-width: 0 2px 2px 0;
+    transform: translateY(-75%) rotate(45deg); /* Posunie šípku presne na stred a otočí ju */
+    pointer-events: none; /* Umožní kliknúť "cez" šípku na select */
+    transition: border-color var(--duration-fast), transform var(--duration-fast) ease-out; /* Pridaná transition pre transform */
+}
+
+/* Zmena farby šípky pri focuse */
+.select-item:focus-within::after {
+    border-color: var(--primary-color);
+}
+/* === KONIEC PRIDANIA === */
+#okresny-urad:disabled { /* Tento štýl môže zostať, ak by ste mali disabled stav */ 
+    cursor: not-allowed; 
+    color: var(--neutral-400); 
+}
+
+/* === PRIDANÉ NOVÉ ŠTÝLY PRE VLASTNÝ SELECT === */
+
+/* Kontajner pre možnosti */
+.custom-select-options {
+    position: absolute;
+    top: calc(100% + 8px); /* Malá medzera pod poľom */
+    left: 0;
+    width: 100%; /* Požadovaná rovnaká šírka */
+    background: var(--surface-color);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-md); /* Rovnaké zaoblenie ako .select-item */
+    box-shadow: var(--shadow-lg); /* Pekný tieň */
+    z-index: 1000;
+    max-height: 300px;
+    overflow-y: auto;
+    
+    /* Pre plynulé zobrazenie/skrytie */
+    opacity: 0;
+    transform: translateY(-10px);
+    visibility: hidden;
+    transition: opacity var(--duration-fast) ease-out, transform var(--duration-fast) ease-out;
+    display: block !important; /* Prepisuje inline štýl pre animáciu */
+}
+
+/* Zobrazenie kontajnera */
+.custom-select-options.active {
+    opacity: 1;
+    transform: translateY(0);
+    visibility: visible;
+}
+
+/* Jednotlivé možnosti v zozname */
+.custom-select-option {
+    padding: var(--space-3) var(--space-4);
+    cursor: pointer;
+    font-size: var(--font-size-sm);
+    font-weight: 500;
+    color: var(--text-secondary);
+    transition: all var(--duration-fast) ease-out;
+}
+
+.custom-select-option:hover {
+    background-color: var(--primary-light);
+    color: var(--primary-color);
+}
+
+.custom-select-option.selected {
+    background-color: var(--primary-light);
+    color: var(--primary-color);
+    font-weight: 600;
+}
+
+/* Otočenie šípky pri otvorení */
+.select-item.is-open::after {
+    transform: translateY(-75%) rotate(225deg); /* Otočenie pôvodnej šípky o 180 stupňov */
+}
+
+/* === KONIEC PRIDANÝCH ŠTÝLOV === */
+
+
+.spis-input-group { 
+    display: flex; 
+    gap: 0.5rem; 
+    max-width: 400px; 
+}
+
+.form-input { 
+    width: 100%; 
+    padding: var(--space-3);
+    border: 1px solid var(--border-color); 
+    border-radius: var(--radius-md);
+    transition: var(--transition); 
+    font-size: var(--font-size-sm);
+    background: rgba(255, 255, 255, 0.7); /* ZMENA: Z var(--surface-color) */
+    box-shadow: var(--shadow-xs);
+    color: var(--text-color); /* Pridané pre dark mode */
+}
+.form-input:focus {
+    border-color: var(--primary-color);
+    outline: none;
+    box-shadow: 0 0 0 3px var(--primary-light);
+}
+/* === KONIEC DIZAJNU FORMULÁROV === */
+
+
+/* === NOVÝ DIZAJN FILE DROP ZONE === */
+.file-drop-zone { 
+    flex: 1; 
+    min-width: 250px; 
+    border: 2px dashed var(--neutral-300);
+    border-radius: var(--radius-lg);
+    padding: 1.5rem; 
+    text-align: center; 
+    position: relative; 
+    transition: var(--transition); 
+    background: var(--surface-gradient-1);
+}
+.file-drop-zone.active { 
+    border-color: var(--primary-color); 
+    background: var(--primary-light); 
+}
+.file-drop-zone.loaded { 
+    border-color: var(--success-color); 
+    border-style: solid; 
+    background-color: var(--success-light); 
+}
+.file-input-wrapper { position: relative; }
+.file-input { position: absolute; top: 0; left: 0; width: 100%; height: 100%; opacity: 0; cursor: pointer; }
+.file-drop-zone__prompt { color: var(--text-secondary); }
+.file-drop-zone__prompt i { 
+    font-size: 1.5rem; 
+    margin-bottom: 0.5rem; 
+    color: var(--neutral-400); 
+}
+.file-drop-zone__prompt p { 
+    font-size: 1rem; 
+    font-weight: 600; 
+    color: var(--text-color); 
+}
+.file-details { display: none; text-align: left; }
+.file-drop-zone.loaded .file-details { display: block; }
+.file-drop-zone.loaded .file-drop-zone__prompt { display: none; }
+.file-info { display: flex; align-items: center; gap: 0.75rem; margin-bottom: 0.5rem; }
+.file-info i { font-size: 2rem; color: var(--success-color); }
+.file-name { font-weight: 600; word-break: break-all; color: var(--text-color); }
+.file-size { font-size: 0.8rem; color: var(--text-secondary); }
+.btn-remove-file { 
+    background: none; 
+    border: none; 
+    color: var(--danger-color); 
+    cursor: pointer; 
+    margin-left: auto; 
+    font-size: 1.5rem;
+    transition: var(--transition);
+}
+.btn-remove-file:hover {
+    transform: scale(1.2);
+}
+/* === KONIEC FILE DROP ZONE === */
+
+
+/* === NOVÝ DIZAJN .doc-box (z des.html) === */
+.generators-grid { 
+    display: grid; 
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); 
+    gap: var(--space-6);
+}
+.doc-box { 
+    background: rgba(255, 255, 255, 0.7);
+    backdrop-filter: blur(20px) saturate(180%);
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    border-radius: var(--radius-xl);
+    padding: var(--space-6);
+    display: flex; 
+    flex-direction: column; 
+    text-align: left;
+    position: relative; 
+    overflow: hidden; 
+    z-index: 1; 
+    transition: all var(--duration-normal) var(--ease-spring);
+}
+.doc-box::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: var(--primary-gradient);
+    opacity: 0;
+    transition: opacity var(--duration-normal) var(--ease-spring);
+    z-index: -1;
+}
+.doc-box:hover {
+    transform: translateY(-4px);
+    box-shadow: 
+        0 20px 40px rgba(0, 64, 128, 0.2), /* Upravený tieň */
+        0 8px 16px rgba(0, 0, 0, 0.1);
+    border-color: var(--primary-color);
+}
+.doc-box:hover::after {
+    opacity: 0.05;
+}
+
+.doc-box h4 { 
+    font-family: var(--font-display);
+    font-size: var(--font-size-lg);
+    font-weight: 700;
+    color: var(--text-color);
+    margin: 0 0 var(--space-2) 0;
+    position: relative; 
+    z-index: 2;
+}
+.doc-box__description { 
+    font-size: var(--font-size-sm);
+    color: var(--text-secondary); 
+    margin-bottom: 1.5rem; 
+    flex-grow: 1; 
+    position: relative; 
+    z-index: 2;
+    line-height: 1.5;
+}
+.doc-box button.btn {
+    position: relative;
+    z-index: 2;
+    margin-top: auto;
+}
+.doc-box.is-success {
+    box-shadow: var(--shadow-md);
+}
+.doc-box.is-error {
+     box-shadow: var(--shadow-md);
+}
+.doc-box__progress-wrapper,
+.btn-progress-fill {
+    display: none !important;
+}
+
+.generator-group {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    padding-top: 1rem;
+    margin-top: 1rem;
+    border-top: 1px dashed var(--border-color);
+    z-index: 2;
+}
+.generator-group .btn {
+    width: 100%;
+}
+#send-mail-btn-vp {
+    background: var(--surface-color);
+    color: var(--text-color);
+    border: 1px solid var(--border-color);
+}
+#send-mail-btn-vp:hover:not(:disabled) {
+    background: var(--primary-gradient);
+    color: white;
+    box-shadow: 0 8px 20px rgba(0, 64, 128, 0.4);
+    border-color: transparent;
+}
+/* === KONIEC DIZAJNU .doc-box === */
+
+
+/* === NOVÝ DIZAJN TABUĽKY === */
+.data-preview-header { 
+    margin-bottom: 1rem; 
+    font-size: 0.9rem; 
+    color: var(--text-secondary); 
+}
+.data-preview-table-wrapper {
+    overflow-x: auto;
+    overflow-y: auto;
+    max-height: 400px;
+    width: 100%;
+    
+    /* ZMENA: Aplikovaný glass-effect */
+    background: rgba(255, 255, 255, 0.7);
+    backdrop-filter: blur(20px) saturate(180%);
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-sm);
+}
+.data-preview-table-wrapper table { 
+    width: 100%; 
+    border-collapse: collapse; 
+}
+.data-preview-table-wrapper th, 
+.data-preview-table-wrapper td { 
+    padding: var(--space-3) var(--space-4);
+    text-align: left; 
+    border-bottom: 1px solid var(--border-color); 
+    white-space: nowrap; 
+    font-size: var(--font-size-sm);
+}
+.data-preview-table-wrapper th { 
+    background-color: var(--neutral-50); /* ZMENA: Z var(--neutral-50) */
+    font-weight: 600; 
+    position: sticky; 
+    top: 0; 
+    color: var(--text-color);
+    z-index: 10;
+    white-space: normal;
+}
+.data-preview-table-wrapper tr:last-child td { 
+    border-bottom: none; 
+}
+.data-preview-table-wrapper tr.row-error { 
+    background-color: var(--danger-light); 
+}
+.data-preview-table-wrapper tr.row-error:hover { 
+    background-color: #fddede; 
+}
+/* === KONIEC DIZAJNU TABUĽKY === */
+
+
+/* Animácia pre načítanie riadkov (bezo zmeny) */
+@keyframes slideInUp {
+    from { opacity: 0; transform: translateY(15px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+.data-preview-table-wrapper tbody tr {
+    opacity: 0;
+    animation: slideInUp 0.4s ease-out forwards;
+    animation-delay: calc(0.015s * var(--row-index, 0));
+}
+
+
+/* === NOVÝ DIZAJN MODÁLNYCH OKIEN (z des.html) === */
+.modal-overlay { 
+    position: fixed; 
+    inset: 0; 
+    background: rgba(0, 0, 0, 0.5); 
+    backdrop-filter: blur(8px); 
+    display: flex; 
+    align-items: center; 
+    justify-content: center; 
+    z-index: 3000; 
+    opacity: 0; 
+    transition: opacity var(--duration-normal) var(--ease-out); 
+    pointer-events: none; 
+}
+.modal-overlay.active { 
+    opacity: 1; 
+    pointer-events: auto; 
+}
+
+.modal-content { 
+    /* ZMENA: Aplikovaný glass-effect */
+    background: rgba(255, 255, 255, 1); /* Trochu menej priehľadné pre čitateľnosť */
+    backdrop-filter: blur(20px) saturate(180%);
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    
+    border-radius: var(--radius-xl);
+    box-shadow: var(--shadow-xl); 
+    max-width: 810px; 
+    width: 90%; 
+    max-height: 90vh; 
+    display: flex; 
+    flex-direction: column; 
+    position: relative; 
+    padding: 0;
+    transform: scale(0.9) translateY(20px); 
+    transition: transform var(--duration-normal) var(--ease-spring), background-color var(--duration-normal) ease-out; /* Pridané pre plynulú zmenu */
+}
+.modal-overlay.active .modal-content { 
+    transform: scale(1) translateY(0); 
+}
+
+.modal-header { 
+    padding: var(--space-6);
+    border-bottom: 1px solid var(--border-color); 
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    transition: border-color var(--duration-normal) ease-out; /* Pridané pre plynulú zmenu */
+}
+.modal-header h3 { 
+    margin: 0; 
+    font-family: var(--font-display);
+    font-size: 1.25rem; 
+    color: var(--text-color);
+}
+.modal-body { 
+    padding: var(--space-6);
+    overflow-y: auto; 
+    color: var(--text-secondary);
+}
+.modal-body p {
+    color: var(--text-secondary);
+}
+.modal-body b {
+    color: var(--text-color);
+}
+
+.modal-close-btn { 
+    position: static;
+    width: 32px;
+    height: 32px;
+    border-radius: var(--radius-md);
+    border: none;
+    background: var(--neutral-100);
+    color: var(--text-secondary);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1rem;
+    line-height: 1;
+    transition: all var(--duration-fast);
+}
+.modal-close-btn:hover { 
+    background: var(--danger-color); 
+    color: white; 
+    transform: rotate(90deg); 
+}
+
+.help-center-header { 
+    display: flex; 
+    align-items: center; 
+    gap: 1rem; 
+    color: var(--primary-color); 
+}
+.help-center-header i { font-size: 1.5rem; }
+.help-center-header .title-group { text-align: left; }
+.help-center-header .title-group h3 { 
+    margin-bottom: 0; 
+    font-family: var(--font-display);
+    color: var(--text-color);
+}
+.help-center-header .title-group span { 
+    font-size: 0.9rem; 
+    color: var(--text-secondary); 
+    font-weight: 400; 
+}
+/* === KONIEC DIZAJNU MODÁLOV === */
+
+
+/* === NOVÝ DIZAJN EMPTY STATE === */
+.empty-state-placeholder {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    padding: 2rem;
+    
+    /* ZMENA: Aplikovaný glass-effect */
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    background-color: rgba(250, 250, 249, 0.7); /* Z var(--neutral-50) */
+    backdrop-filter: blur(20px) saturate(180%);
+    
+    border-radius: var(--radius-lg);
+    color: var(--text-secondary);
+    min-height: 150px;
+    transition: background-color var(--duration-normal) ease-out; /* Pridané pre plynulú zmenu */
+}
+.empty-state-placeholder i {
+    font-size: 2.5rem;
+    margin-bottom: 1rem;
+    color: var(--neutral-300);
+}
+.empty-state-placeholder h4 {
+    font-size: 1.2rem;
+    font-family: var(--font-display);
+    color: var(--text-color);
+    margin-bottom: 0.5rem;
+}
+/* === KONIEC EMPTY STATE === */
+
+
+/* === NOVÝ DIZAJN TOOLTIPOV (BEZ ŠÍPKY) === */
+[data-tooltip] { position: relative; cursor: pointer; }
+[data-tooltip]::after {
+    content: attr(data-tooltip);
+    position: absolute;
+    bottom: calc(100% + 10px);
+    left: 50%;
+    transform: translateX(-50%);
+    background-color: var(--neutral-800);
+    color: var(--neutral-50);
+    padding: var(--space-2) var(--space-3);
+    border-radius: var(--radius-sm);
+    font-size: var(--font-size-xs);
+    font-weight: 500;
+    white-space: nowrap;
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none;
+    transition: opacity 0.2s ease, visibility 0.2s ease;
+    z-index: 5000;
+    box-shadow: var(--shadow-lg);
+}
+[data-tooltip]:hover::after {
+    opacity: 1;
+    visibility: visible;
+}
+/* === KONIEC TOOLTIPOV === */
+
+
+/* === NOVÝ DIZAJN AKORDEÓNU (NÁPOVEDA) === */
+.accordion-group {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    padding: 0.5rem 0;
+}
+.accordion-card {
+    /* ZMENA: Aplikovaný glass-effect */
+    background: rgba(255, 255, 255, 0.7);
+    backdrop-filter: blur(20px) saturate(180%);
+    border: 1px solid rgba(255, 255, 255, 0.3);
+
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-sm);
+    transition: var(--transition);
+    overflow: hidden; 
+}
+.accordion-card:hover {
+    box-shadow: var(--shadow-md);
+    transform: translateY(-2px);
+    border-color: var(--primary-light);
+}
+.accordion-card .accordion-header {
+    padding: 1rem 1.5rem;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    font-weight: 600;
+    font-size: 1rem;
+    color: var(--text-color);
+    background-color: transparent; /* ZMENA: Z var(--surface-color) */
+    border-bottom: none;
+    transition: all 0.2s;
+}
+.accordion-card.active .accordion-header {
+    background-color: rgba(0, 64, 128, 0.1); /* ZMENA: Priehľadná verzia --primary-light */
+    border-bottom: 1px solid var(--border-color);
+}
+.accordion-card.active .accordion-header,
+.accordion-card .accordion-header:hover {
+    color: var(--primary-color);
+}
+.accordion-header-icon {
+    font-size: 1.25rem;
+    margin-right: 1rem;
+    color: var(--primary-color);
+    transition: transform 0.3s ease;
+}
+.accordion-header .fa-chevron-down {
+    margin-right: 0;
+    margin-left: 1rem;
+    color: var(--text-secondary);
+}
+.accordion-card:hover .accordion-header .fa-chevron-down,
+.accordion-card.active .accordion-header .fa-chevron-down {
+    color: var(--primary-color);
+}
+.accordion-card.active .accordion-header .fa-chevron-down {
+    transform: rotate(180deg);
+}
+.accordion-card .accordion-header .fa-question-circle,
+.accordion-card .accordion-header .fa-wrench {
+    transform: none !important;
+}
+.accordion-card .accordion-content {
+    max-height: 0;
+    overflow: hidden;
+    transition: max-height 0.4s ease-out, padding 0.4s ease-out;
+    padding: 0 1.5rem;
+    background-color: transparent; /* ZMENA: Z var(--background-color) */
+    font-size: 0.9rem;
+    line-height: 1.5;
+    color: var(--text-secondary);
+}
+.accordion-card.active .accordion-content {
+    max-height: 500px;
+    padding: 1rem 1.5rem 1.5rem 1.5rem;
+}
+.accordion-card .accordion-content ul,
+.accordion-card .accordion-content ol {
+    padding-left: 20px;
+    margin: 1rem 0 0 0;
+}
+.accordion-card .accordion-content li {
+    margin-bottom: 0.5rem;
+}
+.accordion-card .accordion-content b {
+    color: var(--primary-color);
+    font-weight: 700;
+}
+.accordion-light {
+    display: none; 
+}
+
+/* Nový zoznam na stiahnutie */
+.download-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-lg);
+    overflow: hidden;
+    background-color: var(--surface-color);
+    box-shadow: var(--shadow-sm);
+}
+.download-item {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding: 1rem 1.5rem;
+    border-bottom: 1px solid var(--border-color);
+}
+.download-item:last-child {
+    border-bottom: none;
+}
+.download-item > i {
+    color: var(--success-color);
+    font-size: 1.5rem;
+}
+.download-item span {
+    font-weight: 500;
+    color: var(--text-color);
+}
+/* === KONIEC DIZAJNU AKORDEÓNU === */
+
+
+/* === SKELETON LOADING STATES (z des.html) === */
+.skeleton {
+    background: linear-gradient(
+        90deg,
+        var(--neutral-100) 0%,
+        var(--neutral-200) 50%,
+        var(--neutral-100) 100%
+    );
+    background-size: 1000px 100%;
+    animation: shimmer 2s infinite;
+    border-radius: var(--radius-md);
+}
+@keyframes shimmer {
+    0% { background-position: -1000px 0; }
+    100% { background-position: 1000px 0; }
+}
+.skeleton-text {
+    height: 1em;
+    margin-bottom: var(--space-3);
+}
+.skeleton-text:last-child {
+    width: 60%;
+}
+.skeleton-avatar {
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+}

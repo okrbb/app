@@ -1,0 +1,126 @@
+/* css/_tour.css */
+/* ====================================================== */
+/* === REDIZAJN: Štýly pre Sprievodcu (Shepherd.js) ===== */
+/* ====================================================== */
+.tour-header { display: flex; align-items: center; gap: 1rem; width: 100%; }
+.tour-step-indicator { 
+    /* ZMENA: Nové farby */
+    background-color: var(--primary-light); 
+    color: var(--primary-color); 
+    padding: 0.25rem 0.75rem; 
+    border-radius: var(--radius-full); /* Väčšie zaoblenie */
+    font-size: 0.8rem; 
+    font-weight: 700; 
+    flex-shrink: 0; 
+}
+.tour-header h3 { 
+    margin: 0; 
+    font-size: 1.25rem; 
+    color: var(--text-color); /* Nová farba */
+    font-weight: 600; 
+    font-family: var(--font-display); /* Nový font */
+}
+.shepherd-element.shepherd-custom-theme { 
+    /* ZMENA: Nový dizajn */
+    border-radius: var(--radius-xl); /* 1.5rem */
+    box-shadow: var(--shadow-xl); 
+    background: var(--surface-color);
+    border: 1px solid var(--border-color);
+}
+.shepherd-custom-theme .shepherd-header { 
+    padding: 1rem 1.5rem 0.5rem 1.5rem; 
+    background-color: transparent; 
+}
+.shepherd-custom-theme .shepherd-text { 
+    padding: 0.5rem 1.5rem 1rem 1.5rem; 
+    font-size: 0.95rem; 
+    color: var(--text-secondary); /* Nová farba */
+}
+.shepherd-custom-theme .shepherd-footer { 
+    padding: 0 1.5rem 1.5rem; 
+}
+
+/* === APLIKÁCIA NOVÉHO .btn SYSTÉMU === */
+.shepherd-custom-theme .shepherd-button { 
+    /* Reset na základný .btn */
+    margin: 0 0.25rem;
+    
+    /* Vlastnosti z .btn */
+    padding: var(--space-3) var(--space-6);
+    border: none;
+    border-radius: var(--radius-md);
+    font-family: var(--font-body);
+    font-size: var(--font-size-sm);
+    font-weight: 600;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--space-2);
+    transition: all var(--duration-normal) var(--ease-spring);
+    text-decoration: none;
+    position: relative;
+    overflow: hidden;
+}
+.shepherd-custom-theme .shepherd-button:hover { 
+    transform: translateY(-2px) scale(1.02); 
+    box-shadow: var(--shadow-lg); 
+}
+
+/* Primárne tlačidlo (.btn--primary) */
+.shepherd-custom-theme .shepherd-button:not(.shepherd-button-secondary) { 
+    background: var(--primary-gradient);
+    color: white;
+    box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3);
+}
+.shepherd-custom-theme .shepherd-button:not(.shepherd-button-secondary):hover { 
+    box-shadow: 0 8px 20px rgba(99, 102, 241, 0.4);
+    background: var(--primary-gradient); /* Zachová gradient */
+    color: white;
+}
+
+/* Sekundárne tlačidlo (.btn--secondary) */
+.shepherd-custom-theme .shepherd-button-secondary { 
+    background: var(--surface-color);
+    color: var(--text-color);
+    border: 1px solid var(--border-color);
+}
+.shepherd-custom-theme .shepherd-button-secondary:hover { 
+    background: var(--neutral-100);
+    box-shadow: var(--shadow-md);
+    border: 1px solid var(--border-color);
+    color: var(--text-color);
+}
+
+.shepherd-custom-theme .shepherd-cancel-icon {
+    /* --- Vynútenie rozmerov a tvaru --- */
+    width: 32px !important;       /* Presná šírka */
+    height: 32px !important;      /* Presná výška */
+    padding: 0 !important;        /* Bez vnútorného odsadenia */
+    border-radius: var(--radius-md) !important; /* Zaoblené rohy štvorca */
+    box-sizing: border-box !important; /* Padding a border sú v rozmeroch */
+
+    /* --- Vzhľad --- */
+    border: none !important;
+    background: var(--neutral-100) !important;
+    color: var(--text-secondary) !important;
+
+    /* --- Zarovnanie obsahu (ikony) --- */
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    font-size: 1rem !important; /* Môžete upraviť, ak je ikona príliš malá/veľká */
+    line-height: 1 !important;
+
+    /* --- Správanie --- */
+    cursor: pointer !important;
+    transition: all var(--duration-fast) ease-in-out !important; /* Plynulá animácia */
+    transform: rotate(0deg); /* Explicitne nastavený počiatočný stav pre animáciu */
+}
+
+/* Hover štýly z .modal-close-btn s animáciou */
+.shepherd-custom-theme .shepherd-cancel-icon:hover { 
+    background: var(--danger-color) !important; 
+    color: white !important; 
+    transform: rotate(90deg) !important; /* Animácia otočenia */
+}

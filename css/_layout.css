@@ -1,0 +1,887 @@
+/* css/_layout.css */
+/* ================================================= */
+/* === ZÁKLADNÝ RESET A LAYOUT ===================== */
+/* ================================================= */
+
+/* --- NOVÉ KEYFRAMES (z des.html) --- */
+@keyframes pop-in {
+  0% { transform: scale(0.5); opacity: 0; }
+  100% { transform: scale(1); opacity: 1; }
+}
+
+@keyframes fade-in {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+@keyframes slide-up {
+    from { 
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to { 
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* === PRIDANÉ KEYFRAMES (zo styles2.css) === */
+@keyframes gradientPan {
+    0% {
+        background-position: 0% 50%;
+    }
+    50% {
+        background-position: 100% 50%;
+    }
+    100% {
+        background-position: 0% 50%;
+    }
+}
+
+/* Kľúčový kód ORB animácie bol odstránený */
+/* @keyframes float { ... } */
+/* --- KONIEC KEYFRAMES --- */
+
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+    /* ZMENA: Nové fonty a farby */
+    font-family: var(--font-body);
+    background-color: var(--background-color);
+    color: var(--text-color);
+    line-height: 1.6;
+    
+    /* ZMENA: Zabráni rolovaniu celej stránky (body) na desktope */
+    overflow: hidden; 
+    
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    /* Pridaná plynulá zmena farieb */
+    transition: background-color var(--duration-normal) ease-out, color var(--duration-normal) ease-out;
+}
+
+/* ================================================= */
+/* === NOVÝ DASHBOARD LAYOUT (z des.html) ========== */
+/* ================================================= */
+
+.dashboard-container { 
+    /* ZMENA: Odstránený display: flex; Sidebar už nie je súčasťou toku */
+    height: 100vh; 
+    position: relative; /* Pre z-index pozadia */
+    z-index: 1; /* <-- PRIDANÉ */
+}
+
+/* === PÔVODNÝ KÓD PRE ANIMOVANÉ POZADIE (ORBS) BOL ODSTRÁNENÝ === */
+/* .background-orbs { ... } */
+/* .orb { ... } */
+/* .orb-1 { ... } */
+/* .orb-2 { ... } */
+/* .orb-3 { ... } */
+/* === KONIEC ODSTRÁNENIA ORBS === */
+
+
+/* === ZMENA: Sidebar je teraz "neviditeľný" fixný kontajner === */
+.dashboard-sidebar {
+    width: 300px;
+    
+    /* ZMENA: Priehľadné pozadie a žiadne okraje/tiene */
+    background: transparent;
+    backdrop-filter: none;
+    padding: var(--space-8); /* 2rem */
+    display: flex;
+    flex-direction: column;
+    border-right: none;
+    box-shadow: none;
+    
+    /* ZMENA: Z position: sticky na position: fixed */
+    position: fixed;
+    top: 0;
+    left: 0; /* Pridané pre istotu */
+    height: 100vh;
+    z-index: 10;
+    /* Pridaná plynulá zmena farieb */
+    transition: background-color var(--duration-normal) ease-out, border-color var(--duration-normal) ease-out, box-shadow var(--duration-normal) ease-out, width var(--duration-normal) ease-out, height var(--duration-normal) ease-out, flex-shrink 0; /* Zabraňuje zmenšeniu na mobile */
+}
+
+/* === NOVÁ: Hlavička loga (z des.html) === */
+.logo-section {
+    display: flex;
+    align-items: center;
+    justify-content: center; 
+    margin-top: 0; /* ZMENA: Vynulované, keďže je v hlavičke */
+    margin-bottom: 0; /* ZMENA: Vynulované */
+    transition: var(--transition); /* Pridané pre plynulú zmenu */
+    flex-shrink: 0; /* Zabraňuje zmenšeniu */
+    /* Logo je teraz na ploche, žiadne zmeny nie sú potrebné */
+}
+
+/* === PRIDANÉ ŠTÝLY PRE ANIMÁCIU LOGA (zo styles2.css) === */
+.logo-circle:hover {
+    background: transparent;
+    animation: none;
+}
+
+.logo-circle:hover .sidebar-logo {
+    /* Presná animácia z .header-logo-container:hover .header-logo-img [styles2.css] */
+    transform: scale(2.72) rotate(360deg);
+    filter: drop-shadow(4px 4px 6px rgba(0, 0, 0, 0.3));
+}
+/* === KONIEC PRIDANÝCH ŠTÝLOV === */
+
+.logo-circle {
+    width: 50px; /* ZMENA: Zmenšené pre hlavičku (bolo 108px) */
+    height: 50px; /* ZMENA: Zmenšené pre hlavičku (bolo 108px) */
+    background: transparent;
+    border-radius: var(--radius-md); /* Prevzaté z styles2.css */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    transition: all var(--transition-smooth); /* Prevzaté z styles2.css */
+    flex-shrink: 0;
+}
+
+/* Logo je na vrchu */
+.sidebar-logo {
+    width: 100%; /* ZMENA: (podľa styles2.css) */
+    height: 100%; /* ZMENA: (podľa styles2.css) */
+    object-fit: contain; /* ZMENA: (podľa styles2.css) */
+    padding: 4px; /* ZMENA: Zmenšený padding (bolo 8px) */
+    position: relative; /* Ponechané (zhoduje sa s styles2.css) */
+    z-index: 2; /* PRIDANÉ: (podľa styles2.css) */
+    border-radius: 0; /* ZMENA: Zaoblenie je na .logo-circle */
+    transition: transform 0.7s cubic-bezier(0.4, 0, 0.2, 1); /* ZMENA: (podľa styles2.css) */
+}
+
+.sidebar-context {
+    margin-bottom: 1.5rem;
+    flex-shrink: 0; /* Zabraňuje zmenšeniu */
+}
+.context-label {
+    font-weight: 600;
+    color: var(--text-color);
+    margin-bottom: 1.5rem;
+    display: block;
+    font-size: 0.8rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-top: 1rem;
+}
+
+/* === ZMENA: Agenda (.sidebar-nav) je teraz priamo na ploche === */
+.sidebar-nav {
+    overflow-y: auto;
+    overflow-x: hidden;
+    /* === ZAČIATOK ZMENY === */
+    min-height: 100px; /* Zaistí, že sa menu úplne neskryje */
+    
+    /* Skrytie posuvníka */
+    scrollbar-width: none; /* Firefox */
+}
+/* === ZAČIATOK ZMENY: Skrytie posuvníka pre WebKit === */
+.sidebar-nav::-webkit-scrollbar {
+    display: none;
+}
+/* === KONIEC ZMENY === */
+
+.nav-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2); /* 0.5rem */
+    margin-bottom: var(--space-4);
+}
+
+.nav-link {
+    display: flex;
+    align-items: center;
+    gap: var(--space-3); /* 0.75rem */
+    padding: var(--space-3) var(--space-4); /* 0.75rem 1rem */
+    border-radius: var(--radius-md); /* 0.75rem */
+    text-decoration: none;
+    color: var(--text-secondary);
+    font-weight: 500;
+    font-size: var(--font-size-sm); /* 0.875rem */
+    transition: all var(--duration-normal) var(--ease-spring);
+    cursor: pointer;
+    position: relative;
+    overflow: hidden;
+    border: none;
+    flex-shrink: 0; /* Pre responzivitu */
+}
+.nav-link::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 3px;
+    height: 100%;
+    background: var(--primary-gradient);
+    transform: scaleY(0);
+    transition: transform var(--duration-normal) var(--ease-spring);
+}
+.nav-link.disabled {
+    opacity: 0.5;
+    pointer-events: none;
+    background: var(--neutral-100);
+}
+.nav-link:not(.disabled):hover {
+    background: var(--surface-gradient-1);
+    color: var(--primary-color);
+    transform: translateX(4px);
+}
+.nav-link.active {
+    background: var(--surface-gradient-1);
+    color: var(--primary-color);
+    box-shadow: none;
+    font-weight: 600;
+}
+.nav-link.active::before {
+    transform: scaleY(1);
+}
+.nav-link i {
+    font-size: 1.1rem;
+    width: 24px;
+    text-align: center;
+    transition: transform var(--duration-normal) var(--ease-spring);
+}
+.nav-link:not(.disabled):hover i {
+    transform: rotate(-5deg); /* === ZMENA: Odstránené scale(1.15) === */
+}
+
+
+/* === ZAČIATOK ZMENY: História (.sidebar-notifications) je teraz priamo na ploche === */
+.sidebar-notifications {
+    padding-top: var(--space-4); /* ZMENA: Medzera od čiary po obsah (bola --space-2) */
+    border-top: 1px solid var(--border-color); /* Oddeľovacia čiara */
+    flex-shrink: 0; /* Zabraňuje zmenšeniu */
+    display: flex;
+    flex-direction: column;
+    max-height: 300px; /* Pevná maximálna výška */
+}
+.sidebar-notifications .notification-list {
+    /* Štýly sú definované v _notifications.css */
+    /* Tieto štýly (pozadie, okraj, padding) sa teraz aplikujú, */
+    /* keďže rodič už nemá vlastný padding */
+    flex-grow: 1;
+    overflow-y: auto;
+}
+.sidebar-notifications .btn {
+    margin-top: var(--space-3);
+    width: 100%;
+    padding: var(--space-2); /* Menšie tlačidlo */
+    font-size: 0.8rem;
+    flex-shrink: 0; /* Zabezpečí, že tlačidlo sa nezmenší */
+}
+
+/* === ZAČIATOK ZMENY: Hover štýl pre tlačidlo Vymazať === */
+#clear-notifications-btn {
+    background-color: var(--neutral-700);
+    color: white;
+    border: none;
+}
+#clear-notifications-btn:hover {
+    background-color: var(--danger-color);
+    color: white;
+    transform: translateY(-2px) scale(1.02); /* Pridanie rovnakého hover efektu */
+    box-shadow: var(--shadow-lg);
+}
+/* === KONIEC ZMENY === */
+
+
+.sidebar-footer {
+    margin-top: auto;
+    padding-top: var(--space-4); /* 1rem */
+    /* ZMENA: Odstránený border-top, keďže sidebar už nie je viditeľný */
+    /* border-top: 1px solid var(--border-color); */
+    display: flex;
+    flex-direction: row;
+    gap: var(--space-2); /* 0.5rem */
+    justify-content: space-around;
+    align-items: center;
+    transition: border-color var(--duration-normal) ease-out; /* Pridané pre plynulú zmenu */
+    flex-shrink: 0; /* Zabezpečí, že päta sa nezmenší */
+}
+.sidebar-footer .btn {
+    width: 44px;
+    height: 44px;
+    padding: 0;
+    font-size: 1rem;
+}
+#reset-app-btn { 
+    background-color: var(--neutral-700); 
+    color: white;
+}
+#reset-app-btn:hover:not(:disabled) { 
+    background-color: var(--danger-color); 
+}
+
+.dashboard-content {
+    /* ZMENA: Pridaná plná výška a odstránené flex: 1 */
+    height: 100vh; 
+    
+    /* ZMENA: Pridaný margin-left, aby sa obsah posunul doprava od fixného sidebaru */
+    margin-left: 300px; /* Šírka .dashboard-sidebar */
+    
+    /* Ponechajte pôvodný padding, ktorý zabezpečí medzeru po stranách a na vrchu/spodku */
+    padding: var(--space-4) var(--space-12) var(--space-8) var(--space-12); 
+    
+    overflow-y: auto; /* Zabezpečí rolovanie IBA TOHTO KONTENJERA */
+    overflow-x: hidden;
+    
+    display: flex; 
+    flex-direction: column;
+    gap: var(--space-16);
+    
+    position: relative;
+    z-index: 1;
+}
+
+/* === PRIDANÁ TRIEDA PRE ZOSKUPENIE LOGA A VÝBERU === */
+.header-left-group {
+    display: flex;
+    align-items: center;
+    gap: var(--space-12); /* Použije rovnakú medzeru ako bola v hlavičke */
+}
+
+.main-header-controls {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: var(--space-6);
+    
+    /* ZMENA: PRIDANÝ horizontálny padding a PONECHANÝ vertikálny padding */
+    padding: var(--space-4) var(--space-6); 
+    
+    background: rgba(255, 255, 255, 0.7);
+    backdrop-filter: blur(20px) saturate(180%);
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-sm);
+    
+    /* === KĽÚČOVÉ VLASTNOSTI PRE PLÁVAJÚCI/PRILEPENÝ EFEKT === */
+    position: sticky; /* Zabezpečí, že sa prilepí pri rolovaní */
+    
+    /* === ZMENA === */
+    /* Z top: 0 na top: var(--space-4) */
+    /* Prilepí sa presne na svoju počiatočnú pozíciu (vďaka paddingu kontajnera), */
+    /* takže sa pri rolovaní vôbec nepohne. */
+    top: var(--space-4); 
+    
+    z-index: 100; /* Zabezpečí, že bude nad všetkým obsahom */
+}
+
+#ou-select-wrapper {
+    /* === KĽÚČOVÁ ZMENA: Nastavenie pevnej/maximálnej šírky === */
+    max-width: 350px; /* Nová pevná maximálna šírka pre stabilizáciu */
+    width: 100%; 
+    flex-shrink: 0; /* ZMENA: Zakážeme zmenšenie, ak je to potrebné */
+    /* === KONIEC KĽÚČOVEJ ZMENY === */
+}
+
+/* Oprava medzery v tlačidle pre výber OÚ */
+
+#okresny-urad-label {
+    /* Pridá malý pravý okraj, aby sa text "OÚ" odtlačil od šípky */
+    margin-right: 0.9rem; 
+    
+    /* === KĽÚČOVÁ ZMENA: Zakázanie zalomenia a obmedzenie šírky === */
+    display: block;
+    white-space: nowrap; 
+    overflow: hidden; 
+    text-overflow: ellipsis; 
+    /* === KONIEC KĽÚČOVEJ ZMENY === */
+}
+
+.header-actions {
+    display: flex;
+    gap: var(--space-2);
+    align-items: center;
+}
+
+.welcome-message { 
+    display: flex; 
+    flex-direction: column; 
+    align-items: center; 
+    justify-content: center; 
+    /* Ak chcete, aby sa natiahol cez zostávajúci priestor, použite: */
+    flex-grow: 1;
+    /* Ak nechcete, nechajte len flexbox vlastnosti na centrovanie obsahu */
+    text-align: center; 
+    color: var(--text-secondary); 
+}
+.welcome-message i { 
+    font-size: 4rem; 
+    margin-bottom: 1.5rem; 
+    color: var(--primary-light); 
+    transition: color var(--duration-normal) ease-out; /* Pridané pre plynulú zmenu */
+}
+.welcome-message h2 {
+    font-family: var(--font-display);
+    font-size: var(--font-size-4xl);
+    font-weight: 700;
+    background: var(--primary-gradient);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    margin-bottom: var(--space-2);
+    line-height: 1.2;
+}
+
+/* Špeciálne pravidlo pre welcome-view, ktoré potrebuje flex pre centrovanie */
+#welcome-view.active {
+    display: flex;
+    flex-direction: column; /* Aby sa .welcome-message natiahol */
+}
+
+.content-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: var(--space-8); /* 2rem */
+    padding-bottom: var(--space-6); /* 1.5rem */
+    border-bottom: 1px solid var(--border-color);
+    gap: 1rem;
+    flex-wrap: wrap;
+    animation: slide-up var(--duration-slow) var(--ease-out);
+    transition: border-color var(--duration-normal) ease-out; /* Pridané pre plynulú zmenu */
+}
+.content-header h2 {
+    font-family: var(--font-display);
+    font-size: 2.25rem;
+    font-weight: 700;
+    background: var(--primary-gradient);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    margin-bottom: 0;
+    line-height: 1.2;
+}
+
+.header-meta {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 0.5rem;
+}
+.selection-summary { 
+    font-size: 1rem; 
+    font-weight: 500; 
+    text-align: right; 
+    color: var(--text-secondary);
+}
+.selection-summary strong { 
+    color: var(--primary-color); 
+    font-weight: 600;
+}
+
+.spis-display {
+    background-color: var(--primary-light);
+    color: var(--primary-color);
+    padding: var(--space-2) var(--space-4);
+    border-radius: var(--radius-full);
+    font-size: 0.9rem;
+    font-weight: 600;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    border: 1px solid var(--primary-color);
+    transition: var(--transition); /* Už tu je plynulá zmena */
+}
+.spis-display i {
+    font-size: 0.8rem;
+}
+.spis-display--editable {
+    cursor: pointer;
+}
+.spis-display--editable:hover {
+    background-color: var(--primary-color);
+    color: white;
+    box-shadow: var(--shadow-md);
+    transform: translateY(-1px);
+}
+.spis-display--error {
+    background-color: var(--danger-light);
+    color: var(--danger-color);
+    border-color: var(--danger-color);
+    font-weight: 600;
+}
+.spis-display--error.spis-display--editable:hover {
+    background-color: var(--danger-color);
+    color: white;
+}
+
+.workflow-container { display: flex; flex-direction: column; gap: 2rem; }
+
+.workflow-step { 
+    /* ZMENA: Aplikovaný glass-effect (rovnaký ako .doc-box) */
+    background: rgba(255, 255, 255, 0.7);
+    backdrop-filter: blur(20px) saturate(180%);
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    /* Ponechané pôvodné */
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-sm);
+    transition: var(--transition); 
+}
+
+.agenda-tab-content-wrapper { 
+    padding-top: 2rem;
+    display: grid;
+    grid-template-areas: "content";
+}
+.agenda-tab-content {
+    grid-area: content;
+    opacity: 0;
+    pointer-events: none;
+    visibility: hidden;
+    transition: opacity 0.3s ease-in-out, visibility 0.3s ease-in-out;
+    min-width: 0;
+}
+.agenda-tab-content.active {
+    opacity: 1;
+    pointer-events: auto;
+    visibility: visible;
+    animation: fade-in 0.5s;
+}
+.workflow-step h3 { 
+    font-family: var(--font-display);
+    color: var(--primary-color); 
+    margin-bottom: 1.5rem; 
+    padding-bottom: 0.75rem; 
+    border-bottom: 2px solid var(--primary-light); 
+    display: flex; 
+    align-items: center; 
+    gap: 0.75rem; 
+    font-size: var(--font-size-lg);
+    transition: color var(--duration-normal) ease-out, border-color var(--duration-normal) ease-out; /* Pridané pre plynulú zmenu */
+}
+
+.agenda-tabs-container {
+    display: flex;
+    border-bottom: 2px solid var(--border-color);
+    transition: border-color var(--duration-normal) ease-out; /* Pridané pre plynulú zmenu */
+}
+.agenda-tab {
+    padding: var(--space-4) var(--space-6);
+    cursor: pointer;
+    border: none;
+    background: none;
+    border-bottom: 3px solid transparent;
+    margin-bottom: -2px;
+    color: var(--text-secondary);
+    font-weight: 600;
+    font-size: 1rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    transition: var(--transition);
+}
+.agenda-tab:hover:not(.is-disabled) {
+    color: var(--primary-color);
+}
+.agenda-tab.active {
+    border-bottom-color: var(--primary-color);
+    color: var(--primary-color);
+}
+.agenda-tab.is-disabled {
+    color: var(--neutral-300);
+    cursor: not-allowed;
+    background-color: var(--background-color);
+}
+.agenda-tab.is-disabled:hover {
+    color: var(--neutral-300);
+}
+
+@keyframes pulse-accent {
+    0% { box-shadow: 0 0 0 0 rgba(255, 152, 0, 0.4); }
+    70% { box-shadow: 0 0 0 10px rgba(255, 152, 0, 0); }
+    100% { box-shadow: 0 0 0 0 rgba(255, 152, 0, 0); }
+}
+.agenda-tab[data-tab="generovanie"]:not(.is-disabled) {
+    color: var(--accent-color);
+    animation: pulse-accent 2s infinite; 
+    border-bottom-color: transparent;
+}
+.agenda-tab[data-tab="generovanie"]:not(.is-disabled).active {
+     border-bottom-color: var(--accent-color);
+     animation: none;
+}
+
+
+.main-view {
+    display: none; /* <-- PRIDAJTE TENTO RIADOK */
+    opacity: 0;
+    transform: translateY(10px);
+    transition: opacity 0.4s ease, transform 0.4s ease;
+    pointer-events: none;
+    visibility: hidden;
+    width: 100%; /* Uistí sa, že zaberá celú šírku */
+    flex-grow: 1; /* Umožní mu vyplniť zostávajúci priestor */
+}
+.main-view.active {
+    opacity: 1;
+    transform: translateY(0);
+    pointer-events: auto;
+    visibility: visible;
+
+    /* ZMENA: Ak je to Welcome View, potrebujeme flex, inak block */
+    display: block; 
+
+    animation: fade-in 0.5s; 
+}
+/* Špeciálne pravidlo pre welcome-view, ktoré potrebuje flex pre centrovanie */
+#welcome-view.active {
+    display: flex;
+}
+
+
+/* === ZAČIATOK ZMENY: Responzívne pravidlá === */
+
+/* Tablet (zmenšenie paddingu) */
+@media (max-width: 1024px) {
+    /* ZMENA: Úprava margin-left pre tablety */
+    .dashboard-content {
+        /* Ponecháme margin-left 300px, ale zmenšíme vnútorný padding */
+        padding: var(--space-6) var(--space-8); /* 1.5rem 2rem */
+    }
+    .workflow-step {
+        padding: 1rem 1.5rem;
+    }
+}
+
+/* Mobil (zmena layoutu) */
+@media (max-width: 768px) {
+    
+    /* ZMENA: Vrátenie rolovania pre body na mobile */
+    body {
+        overflow: auto; /* Pôvodné správanie na mobile */
+    }
+
+    .dashboard-container {
+        /* Pôvodný flex-direction: column už nie je relevantný */
+        height: auto;
+    }
+    
+    .dashboard-sidebar {
+        width: 100%;
+        height: auto;
+        position: static; /* Z fixného na statický */
+        /* ZMENA: Pridanie glassmorphic pozadia pre mobilný "header" */
+        background: rgba(255, 255, 255, 0.7);
+        backdrop-filter: blur(20px) saturate(180%);
+        border-bottom: 1px solid rgba(255, 255, 255, 0.3);
+        box-shadow: var(--shadow-md); /* Tieň pod lištou */
+        
+        padding: var(--space-4); /* Menší padding */
+        flex-direction: row; /* Zarovnanie do riadku */
+        flex-wrap: wrap; /* Zalamovanie */
+        gap: var(--space-4);
+        border-radius: 0; /* Zrušenie zaoblenia pre mobilný header */
+    }
+    
+    /* === ZMENA: ODSTRÁNENÉ PRAVIDLO PRE .logo-section === */
+    /* (.logo-section je teraz súčasťou .main-header-controls) */
+    
+    .sidebar-context {
+        margin-bottom: 0;
+        flex-grow: 1; /* Zaberie zvyšné miesto */
+        min-width: 250px; /* Minimálna šírka */
+    }
+    
+    .sidebar-nav {
+        order: 1; /* Posunie sa na ďalší riadok */
+        width: 100%;
+        flex-grow: 0;
+        overflow-y: hidden;
+        overflow-x: auto; /* Horizontálne rolovanie */
+        min-height: auto;
+        
+        /* ZMENA: Agenda na mobile zostáva plávajúca karta */
+        background: linear-gradient(
+            180deg,
+            rgba(255, 255, 255, 0.75) 0%,
+            rgba(250, 250, 249, 0.75) 100%
+        );
+        backdrop-filter: blur(20px) saturate(180%);
+        border: 1px solid rgba(255, 255, 255, 0.3);
+        box-shadow: 
+            2px 0 40px rgba(0, 64, 128, 0.08),
+            2px 0 8px rgba(0, 0, 0, 0.04);
+        padding: var(--space-4);
+        
+        border-radius: var(--radius-lg); /* Menšie zaoblenie na mobile */
+    }
+    .nav-list {
+        flex-direction: row; /* Agendy vedľa seba */
+        gap: var(--space-1);
+    }
+    .nav-link {
+        flex-shrink: 0; /* Zabraňuje zmenšeniu položiek */
+        padding: var(--space-2) var(--space-3);
+    }
+    .nav-link:not(.disabled):hover {
+        transform: none; /* Vypnutie hover efektu na mobile */
+    }
+    .nav-link.active::before {
+        width: 100%;
+        height: 3px;
+        top: auto;
+        bottom: 0;
+        transform: scaleX(1); /* Zmena animácie na X-ovú os */
+    }
+    
+    .sidebar-notifications {
+        order: 2;
+        width: 100%;
+        margin-top: 0;
+        max-height: 150px; /* Nižší limit na mobile */
+        
+        /* ZMENA: História na mobile zostáva plávajúca karta */
+        background: linear-gradient(
+            180deg,
+            rgba(255, 255, 255, 0.75) 0%,
+            rgba(250, 250, 249, 0.75) 100%
+        );
+        backdrop-filter: blur(20px) saturate(180%);
+        border: 1px solid rgba(255, 255, 255, 0.3);
+        box-shadow: 
+            2px 0 40px rgba(0, 64, 128, 0.08),
+            2px 0 8px rgba(0, 0, 0, 0.04);
+        padding: var(--space-4);
+        
+        border-radius: var(--radius-lg);
+    }
+    
+    .sidebar-footer {
+        order: 3;
+        width: 100%;
+        margin-top: 0;
+        padding-top: var(--space-4);
+        justify-content: center; /* Centrovanie tlačidiel */
+    }
+    
+    .dashboard-content {
+        /* ZMENA: Odstránenie margin-left na mobile */
+        margin-left: 0;
+        padding: var(--space-4) var(--space-4); /* 1rem */
+        
+        /* ZMENA: Vypnutie vlastného rolovania na mobile */
+        height: auto;
+        overflow-y: visible; 
+    }
+    
+    .content-header {
+        margin-bottom: var(--space-4);
+        padding-bottom: var(--space-4);
+    }
+    .content-header h2 {
+        font-size: 1.75rem; /* Menší nadpis */
+    }
+    .header-meta {
+        align-items: flex-start;
+        width: 100%;
+    }
+    
+    .agenda-tabs-container {
+        overflow-x: auto;
+        white-space: nowrap;
+    }
+    
+    /* Nové pravidlo pre mobilné zariadenia */
+    #ou-select-wrapper {
+        max-width: 100%; 
+        flex-grow: 1;
+    }
+}
+/* === KONIEC ZMENY === */
+
+/* === NOVÉ ŠTÝLY PRE ZOBRAZOVANIE TOOLTIPOV POD TLAČIDLAMI === */
+
+/* Kontajner pre tlačidlá s tooltips */
+.header-actions .btn[data-tooltip] {
+    position: relative;
+}
+
+/* Všeobecný štýl pre tooltip (pseudo-element ::after) */
+.header-actions .btn[data-tooltip]::after {
+    /* Umiestnenie pod tlačidlom: */
+    top: 100%; /* Presunie začiatok tooltpu pod spodnú hranu tlačidla */
+    margin-top: 10px; /* Pridá malú medzeru */
+    bottom: auto; /* Zabezpečí, že sa nezobrazí hore (ak bol nastavený) */
+    
+    /* Centrovanie pod tlačidlom: */
+    left: 50%;
+    transform: translateX(-50%); 
+    
+    /* Váš existujúci kód pre tooltip, ktorý zabezpečuje zobrazenie (farby, padding, atď.) */
+    content: attr(data-tooltip); /* Získa text z atribútu */
+    
+    /* --- PRIDAJTE TENTO ŠTÝL, ak tooltipy nie sú definované inde --- */
+    position: absolute;
+    min-width: max-content;
+    padding: 6px 10px;
+    background: var(--neutral-800, #333);
+    color: white;
+    border-radius: var(--radius-sm, 4px);
+    font-size: 0.8rem;
+    white-space: nowrap;
+    z-index: 1000;
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none;
+    transition: opacity 0.2s, visibility 0.2s, transform 0.2s;
+    /* ---------------------------------------------------------------- */
+}
+
+/* Štýl pre zobrazenie tooltipu pri nabehnutí myšou */
+.header-actions .btn[data-tooltip]:hover::after {
+    opacity: 1;
+    visibility: visible;
+}
+
+/* Ak máte aj šípku, je potrebné upraviť aj pseudo-element ::before, 
+aby smeroval nahor namiesto nadol (napr. top: 100%;) */
+/* .header-actions .btn[data-tooltip]::before { ... } */
+
+/* === ZAČIATOK ZMENY: Hover farby pre ikony v hlavičke === */
+
+/* Pridá plynulý prechod farby pre všetky ikony v hlavičke */
+.header-actions .btn i {
+    transition: color var(--duration-normal) ease-out;
+}
+
+/* Nápoveda (otáznik) a Sprievodca (info) budú primárnej (modrej) farby */
+.header-actions #show-help-center:hover i,
+.header-actions #reset-tour-btn:hover i {
+    color: var(--primary-color);
+}
+
+/* Kôš (vymazanie notifikácií) bude červenej farby */
+.header-actions #header-clear-notifications-btn:hover i {
+    color: var(--danger-color);
+}
+/* === KONIEC ZMENY === */
+
+.file-drop-zone.disabled-overlay {
+    position: relative;
+    pointer-events: auto; 
+    cursor: not-allowed;
+}
+.file-drop-zone.disabled-overlay::after {
+    content: 'Vyžaduje sa číslo spisu!';
+    position: absolute;
+    inset: 0;
+    background: rgba(255, 255, 255, 0.7);
+    backdrop-filter: blur(5px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--danger-color);
+    font-weight: 700;
+    font-size: 1.1rem;
+    border-radius: var(--radius-lg);
+    z-index: 100;
+}

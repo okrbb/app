@@ -1,0 +1,10 @@
+/* css/styles.css */
+/* Hlavný súbor, ktorý importuje ostatné */
+
+@import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@700&family=Inter:wght@400;500;600;700&display=swap');
+
+@import url('_variables.css');
+@import url('_layout.css');
+@import url('_components.css');
+@import url('_notifications.css');
+@import url('_tour.css');
