@@ -1,6 +1,9 @@
 // js/main-wizard.js
-import { TEMPLATE_PATHS, TEMPLATE_DOWNLOAD_FILES } from './config.js';
-// === ZMENA: Importujeme Asistenta ===
+
+// === ZMENA: Importujeme aj POSTOVNE ako východziu hodnotu ===
+import { TEMPLATE_PATHS, TEMPLATE_DOWNLOAD_FILES, POSTOVNE } from './config.js';
+// ==========================================================
+
 import { Asistent, showErrorModal, showModal, formatBytes } from './ui.js';
 import { agendaConfigs } from './agendaConfigFactory.js';
 import { DocumentProcessor } from './DocumentProcessor.js';
@@ -15,11 +18,15 @@ const AppState = {
     selectedAgendaKey: null,
     processor: null,
     files: {}, 
-    // === ZMENA: Odstránené AppState.notifications ===
     municipalitiesMailContent: {}, 
     zoznamyPreObceGenerated: false,
     currentView: 'welcome', // 'welcome', 'agenda' (už nie 'help')
-    tempMailContext: {} 
+    tempMailContext: {},
+
+    // === ZMENA: Pridaná hodnota poštovného do stavu ===
+    // Načíta z localStorage, ak neexistuje, použije východziu z config.js
+    postovne: parseFloat(localStorage.getItem('krokr-postovne')) || POSTOVNE
+    // ===============================================
 };
 
 // === NOVÉ KONŠTANTY PRE UVÍTACIE SPRÁVY ===
@@ -90,9 +97,6 @@ document.addEventListener('DOMContentLoaded', async () => {
     const OKRESNE_URADY = staticData.ouData;
     const MUNICIPALITY_EMAILS = staticData.emailData;
     
-    // === KĽÚČOVÁ ZMENA: Odstránenie `helpView` z DOM elementov ===
-    // const helpView = document.getElementById('help-view');
-    // ==========================================================
     const agendaNav = document.getElementById('agenda-navigation');
     const agendaLinks = agendaNav.querySelectorAll('.nav-link');
     const dashboardContent = document.getElementById('dashboard-content');
@@ -101,22 +105,16 @@ document.addEventListener('DOMContentLoaded', async () => {
     const helpCenterBtn = document.getElementById('show-help-center');
     const resetTourBtn = document.getElementById('reset-tour-btn');
 
-    // === ZAČIATOK ZMENY: Odstránené elementy zvončeka ===
     const notificationList = document.getElementById('notification-list');
     const headerClearNotificationsBtn = document.getElementById('header-clear-notifications-btn');
-    // === KONIEC ZMENY ===
 
     // Inicializácia
     populateOkresnyUradSelect(OKRESNE_URADY); 
     
-    // === NOVÁ ZMENA: Inicializácia uvítacích správ hneď na začiatku ===
     setWelcomeMessages(WELCOME_HEADING_TEXT, WELCOME_PROMPT_DEFAULT); 
-    // === KONIEC ZMENY ===
 
-    // === ZMENA: Inicializácia Asistenta ===
     Asistent.init(notificationList);
     Asistent.log('Asistent bol inicializovaný.');
-    // === KONIEC ZMENY ===
     
     initializeFromLocalStorage();
     startGuidedTour();
@@ -146,21 +144,14 @@ document.addEventListener('DOMContentLoaded', async () => {
     
     /**
      * Pripája listenery, ktoré sa nemenia.
-     * === KĽÚČOVÁ ZMENA: Listener pre `helpCenterBtn` volá `showHelpCenterModal` ===
      */
     function setupStaticListeners() {
-        // === ZAČIATOK KĽÚČOVEJ ZMENY: Listener už len pre tlačidlo v hlavičke ===
         if (headerClearNotificationsBtn) {
             headerClearNotificationsBtn.addEventListener('click', () => { 
-                // === ZMENA: Volanie Asistenta ===
                 Asistent.clear();
             });
         }
         
-        // === ZMENA: Odstránený listener pre 'add-notification' ===
-        // document.addEventListener('add-notification', ...);
-        // === KONIEC ZMENY ===
-
         // Vlastný select pre OÚ (bez zmeny)
         const ouSelectWrapper = document.getElementById('ou-select-wrapper');
         const ouTrigger = document.getElementById('okresny-urad-trigger');
@@ -176,9 +167,8 @@ document.addEventListener('DOMContentLoaded', async () => {
         agendaLinks.forEach(link => {
             link.addEventListener('click', (e) => {
                 e.preventDefault();
-                // === ZMENA: Volanie Asistenta ===
                 if (link.classList.contains('disabled')) { Asistent.warn("Najprv prosím vyberte okresný úrad."); return; }
-                if (link.classList.contains('active')) return; // Zjednodušené, lebo help už nie je view
+                if (link.classList.contains('active')) return;
                 if (dashboardContent) dashboardContent.scrollTo({ top: 0, behavior: 'smooth' });
                 const agendaKey = link.dataset.agenda;
                 renderAgendaView(agendaKey);
@@ -186,25 +176,45 @@ document.addEventListener('DOMContentLoaded', async () => {
         });
         resetAppBtn.addEventListener('click', () => { if (confirm("Naozaj chcete resetovať aplikáciu? Stratíte všetky neuložené dáta a výbery.")) { resetApp(); } });
         
-        // === KĽÚČOVÁ ZMENA: Volanie `showHelpCenterModal` ===
         helpCenterBtn.addEventListener('click', () => {
              if (dashboardContent) dashboardContent.scrollTo({ top: 0, behavior: 'smooth' });
              showHelpCenterModal(); // Namiesto renderHelpCenterView
         });
-        // === KONIEC ZMENY ===
         
         resetTourBtn.addEventListener('click', () => { localStorage.removeItem('krokr-tour-completed'); startGuidedTour(); });
+
+        // === ZMENA: Pridaný listener pre pole s poštovným ===
+        const postovneInput = document.getElementById('postovne-input');
+        if (postovneInput) {
+            // Nastavíme počiatočnú hodnotu poľa z AppState
+            postovneInput.value = AppState.postovne.toFixed(2);
+            
+            // Pri zmene (keď používateľ odíde z poľa)
+            postovneInput.addEventListener('change', (e) => {
+                const newValue = parseFloat(e.target.value);
+                
+                // Overíme, či je to platné číslo
+                if (!isNaN(newValue) && newValue >= 0) {
+                    AppState.postovne = newValue;
+                    localStorage.setItem('krokr-postovne', newValue.toString());
+                    Asistent.success(`Poštovné bolo nastavené na ${newValue.toFixed(2)} €.`);
+                } else {
+                    // Ak je vstup neplatný, vrátime ho na pôvodnú hodnotu
+                    e.target.value = AppState.postovne.toFixed(2);
+                    Asistent.warn('Prosím, zadajte platnú číselnú hodnotu pre poštovné.');
+                }
+            });
+        }
+        // === KONIEC ZMENY ===
 
         // Listenery pre modálne okná 
         const modalContainer = document.getElementById('modal-container');
         
         // --- NOVÝ EVENT PRE ZATVORENIE MODÁLU ---
-        // V prípade, že sa modál zatvorí (či už tlačidlom alebo kliknutím mimo)
         modalContainer.addEventListener('modal-close', (e) => {
-             // Ak je aktívna agenda a nebolo zadané číslo spisu
              if (AppState.selectedAgendaKey && !AppState.spis) {
                  Asistent.warn('Číslo spisu nebolo zadané. Pre nahrávanie dát je číslo spisu povinné.');
-                 updateUIState(); // Aktualizuje stav UI (deaktivuje drop zóny)
+                 updateUIState();
              }
         });
         
@@ -239,7 +249,6 @@ document.addEventListener('DOMContentLoaded', async () => {
                  document.querySelector('.modal-overlay .modal-close-btn')?.click(); 
                  
                  if (isChanging) { 
-                     // Pri zmene zobrazujeme naformátované číslo spisu priamo
                      const spisDisplaySpan = document.getElementById('agenda-view')?.querySelector('.spis-display span'); 
                      if (spisDisplaySpan && AppState.okresData) { 
                         spisDisplaySpan.textContent = formatSpisNumber(spisValue, AppState.okresData); 
@@ -249,11 +258,9 @@ document.addEventListener('DOMContentLoaded', async () => {
                      Asistent.success(`Číslo spisu ${spisValue} bolo uložené.`); 
                      const agendaConfig = agendaConfigs[agendaKey]; 
                      if (agendaConfig) { 
-                        // Po úspešnom uložení spisu po prvýkrát, inicializujeme processor
                         initializeDocumentProcessor(agendaConfig);
                      } 
                  }
-                 // Nechceme, aby sa vracalo na welcome view, len sa aktualizuje stav
                  updateUIState();
              } else { 
                  Asistent.warn("Prosím, zadajte platné číslo spisu."); 
@@ -284,12 +291,10 @@ document.addEventListener('DOMContentLoaded', async () => {
         const agendaView = document.getElementById('agenda-view'); 
         const genTab = agendaView?.querySelector('.agenda-tab[data-tab="generovanie"]'); 
         
-        // --- ZAČIATOK KĽÚČOVEJ ZMENY: Stav drop zón a generovania ---
         const spisPresent = !!AppState.spis;
         const filesReady = AppState.selectedAgendaKey && agendaConfigs[AppState.selectedAgendaKey].dataInputs.every(input => AppState.files[input.id]); 
         const hasErrors = AppState.processor?.state?.hasValidationErrors || false;
 
-        // Všetky drop zóny sú dostupné LEN AK je zadané číslo spisu
         const dropZones = agendaView?.querySelectorAll('.file-drop-zone');
         const fileInputs = agendaView?.querySelectorAll('.file-input');
         if (dropZones) {
@@ -303,7 +308,6 @@ document.addEventListener('DOMContentLoaded', async () => {
             });
         }
         
-        // Karta generovania je neaktívna, ak (chýba spis) ALEBO (súbory nie sú pripravené) ALEBO (súbory sú spracované, ale s chybami)
         const shouldBeDisabled = !spisPresent || !filesReady || (filesReady && hasErrors);
 
         if (genTab) { 
@@ -315,18 +319,15 @@ document.addEventListener('DOMContentLoaded', async () => {
         const spisSpan = spisDisplay ? spisDisplay.querySelector('span') : null;
 
         if (spisDisplay && spisSpan) {
-            if (AppState.spis && AppState.okresData) { // Pridaná kontrola AppState.okresData
-                // === KĽÚČOVÁ ZMENA: Formátovanie čísla spisu ===
+            if (AppState.spis && AppState.okresData) {
                 const formattedSpis = formatSpisNumber(AppState.spis, AppState.okresData);
                 spisSpan.textContent = formattedSpis || 'Chyba formátu spisu!';
-                // === KONIEC KĽÚČOVEJ ZMENY ===
                 spisDisplay.classList.remove('spis-display--error');
             } else {
                 spisSpan.textContent = 'Nie je zadané číslo spisu !';
                 spisDisplay.classList.add('spis-display--error');
             }
         }
-        // --- KONIEC KĽÚČOVEJ ZMENY ---
         
         const mailBtnVp = agendaView?.querySelector('#send-mail-btn-vp'); 
         if (mailBtnVp) { 
@@ -337,18 +338,15 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     /**
      * Prepne aktívne zobrazenie v <main> kontajneri.
-     * === KĽÚČOVÁ ZMENA: Odstránený prípad 'help' ===
      */
     function showView(viewName) {
         AppState.currentView = viewName;
         
         const welcomeView = document.getElementById('welcome-view');
         const agendaView = document.getElementById('agenda-view');
-        // const helpView = document.getElementById('help-view'); // Už nepotrebujeme
 
         if (welcomeView) welcomeView.classList.remove('active');
         if (agendaView) agendaView.classList.remove('active');
-        // if (helpView) helpView.classList.remove('active'); // Už nepotrebujeme
         
         switch (viewName) {
             case 'welcome':
@@ -357,7 +355,6 @@ document.addEventListener('DOMContentLoaded', async () => {
             case 'agenda':
                 if (agendaView) agendaView.classList.add('active');
                 break;
-            // Prípad 'help' je odstránený
         }
         
         updateUIState();
@@ -380,9 +377,23 @@ document.addEventListener('DOMContentLoaded', async () => {
     function resetApp() { 
         localStorage.removeItem('krokr-lastOU'); 
         localStorage.removeItem('krokr-lastAgenda'); 
+        
+        // === ZMENA: Resetujeme aj poštovné z localStorage ===
+        localStorage.removeItem('krokr-postovne');
+        // =================================================
+
         resetAgendaState(); 
         AppState.selectedOU = null; 
         AppState.okresData = null; 
+        
+        // === ZMENA: Pri resete nastavíme AppState.postovne na východziu hodnotu ===
+        AppState.postovne = POSTOVNE;
+        const postovneInput = document.getElementById('postovne-input');
+        if (postovneInput) {
+            postovneInput.value = AppState.postovne.toFixed(2);
+        }
+        // =====================================================================
+
         const ouLabel = document.getElementById('okresny-urad-label'); 
         const ouOptions = document.getElementById('okresny-urad-options'); 
         if (ouLabel) ouLabel.textContent = 'Prosím, vyberte OÚ'; 
@@ -392,14 +403,10 @@ document.addEventListener('DOMContentLoaded', async () => {
             if (placeholder) placeholder.classList.add('selected'); 
         } 
         
-        // === NOVÁ ZMENA: Reset uvítacích správ ===
         setWelcomeMessages(WELCOME_HEADING_TEXT, WELCOME_PROMPT_DEFAULT);
-        // === KONIEC ZMENY ===
         
-        // === ZMENA: Použitie Asistenta ===
         Asistent.clear();
         Asistent.log('Aplikácia bola resetovaná.');
-        // === KONIEC ZMENY ===
         
         updateUIState(); 
     }
@@ -423,30 +430,22 @@ document.addEventListener('DOMContentLoaded', async () => {
         AppState.okresData = OKRESNE_URADY[ouKey]; 
         localStorage.setItem('krokr-lastOU', ouKey);
         
-        // === ZMENA: Zobrazenie mena vedúceho odboru ===
         const vedOdboruSpan = document.getElementById('veduci-odboru-span');
         if (vedOdboruSpan && AppState.okresData && AppState.okresData.veduci) {
              vedOdboruSpan.textContent = AppState.okresData.veduci;
         } else if (vedOdboruSpan) {
-             vedOdboruSpan.textContent = 'Neuvedené'; // Ak vedúci nie je v dátach
+             vedOdboruSpan.textContent = 'Neuvedené';
         }
-        // === KONIEC ZMENY ===
 
-        // === ZMENA: Použitie Asistenta ===
         if (!hasData) Asistent.success(`Vybraný OÚ: ${AppState.okresData.Okresny_urad}`);
-        // === KONIEC ZMENY ===
         
-        // === KĽÚČOVÁ ZMENA: Namiesto renderHelpCenterView len aktualizujeme hlavičku agendy ===
         if (AppState.currentView === 'agenda') {
              const agendaView = document.getElementById('agenda-view');
              const summarySpan = agendaView?.querySelector('.selection-summary strong');
              if (summarySpan) summarySpan.nextSibling.textContent = ` ${AppState.okresData.Okresny_urad}`;
         }
-        // === KONIEC ZMENY ===
 
-        // === NOVÁ ZMENA: Aktualizácia uvítacích správ ===
         setWelcomeMessages("", WELCOME_PROMPT_OU_SELECTED);
-        // === KONIEC ZMENY ===
 
         updateUIState();
     }
@@ -462,15 +461,11 @@ document.addEventListener('DOMContentLoaded', async () => {
         
         Asistent.clear();
 
-        // Resetujeme len súbory, aby sme vynútili opätovné nahratie/spracovanie, ak zmeníme agendu
         AppState.files = {}; 
         AppState.municipalitiesMailContent = {}; 
         AppState.zoznamyPreObceGenerated = false; 
-        
-        // Zmena agendy resetuje aj processor
         AppState.processor = null;
 
-        // Nastavíme novú agendu
         AppState.selectedAgendaKey = agendaKey; 
         localStorage.setItem('krokr-lastAgenda', agendaKey);
         showView('agenda'); 
@@ -480,25 +475,20 @@ document.addEventListener('DOMContentLoaded', async () => {
              setupAgendaViewListeners(currentAgendaView, agendaViewListenersController.signal); 
         }
         
-        // --- KĽÚČOVÁ ZMENA: Vždy vykreslíme taby a obsah a inicializujeme processor,
-        // nech je stav spisu akýkoľvek. Vykresľovací kód zabezpečí neaktivitu.
         renderAgendaTabs(agendaKey, agendaConfig);
         
         const globalSpis = localStorage.getItem(`krokr-spis`); 
         if (globalSpis) { 
             AppState.spis = globalSpis; 
-            // Spustíme inicializáciu DocumentProcessora, ak existuje spis
             initializeDocumentProcessor(agendaConfig);
         } else { 
             AppState.spis = null;
-            // Spustíme modal, pretože spis nebol nájdený
             showSpisModal(agendaKey, agendaConfig); 
         }
         
         updateUIState();
     }
 
-    // showSpisModal (bez zmeny, okrem úpravy logiky zatvorenia)
     function showSpisModal(agendaKey, agendaConfig, existingValue = '') { 
         const isChanging = !!existingValue; 
         const titleText = isChanging ? 'Zmeniť číslo spisu' : 'Nastaviť číslo spisu'; 
@@ -517,36 +507,27 @@ document.addEventListener('DOMContentLoaded', async () => {
         agendaView.querySelector('.content-header h2').textContent = agendaConfig.title; 
         agendaView.querySelector('.selection-summary strong').nextSibling.textContent = ` ${AppState.okresData.Okresny_urad}`;
         
-        // === ZMENA: Zobrazenie mena vedúceho odboru ===
         const vedOdboruSpan = document.getElementById('veduci-odboru-span');
         if (vedOdboruSpan && AppState.okresData && AppState.okresData.veduci) {
              vedOdboruSpan.textContent = AppState.okresData.veduci;
         } else if (vedOdboruSpan) {
              vedOdboruSpan.textContent = 'Neuvedené';
         }
-        // === KONIEC ZMENY ===
 
-        // --- ZAČIATOK KĽÚČOVEJ ZMENY: Inicializácia stavu spisu ---
         const spisDisplay = agendaView.querySelector('.spis-display');
         const spisSpan = spisDisplay ? spisDisplay.querySelector('span') : null;
 
         if (spisDisplay && spisSpan) {
-            if (AppState.spis && AppState.okresData) { // Pridaná kontrola AppState.okresData
-                // Ak spis existuje, zobrazíme ho naformátovaný
-                // === KĽÚČOVÁ ZMENA: Formátovanie čísla spisu ===
+            if (AppState.spis && AppState.okresData) {
                 const formattedSpis = formatSpisNumber(AppState.spis, AppState.okresData);
                 spisSpan.textContent = formattedSpis || 'Chyba formátu spisu!';
-                // === KONIEC KĽÚČOVEJ ZMENY ===
                 spisDisplay.classList.remove('spis-display--error');
             } else {
-                // Ak spis neexistuje, zobrazíme varovanie a pridáme triedu
                 spisSpan.textContent = 'Nie je zadané číslo spisu !';
                 spisDisplay.classList.add('spis-display--error');
             }
         }
-        // --- KONIEC KĽÚČOVEJ ZMENY ---
         
-        // Vykreslenie drop zón (už upravených pre stav disabled-overlay)
         const fileInputsHTML = agendaConfig.dataInputs.map(inputConf => `<div class="file-input-wrapper"><div class="file-drop-zone ${AppState.spis ? '' : 'disabled-overlay'}" id="drop-zone-${inputConf.id}"><div class="file-drop-zone__prompt"><i class="fas fa-upload"></i><p><strong>${inputConf.label}</strong></p><span>Presuňte súbor sem alebo kliknite</span></div><div class="file-details"><div class="file-info"><i class="far fa-file-excel"></i><div><div class="file-name"></div><div class="file-size"></div></div><button class="btn-remove-file" data-input-id="${inputConf.id}">&times;</button></div></div></div><input type="file" id="${inputConf.id}" accept=".xlsx,.xls" class="file-input" data-dropzone-id="drop-zone-${inputConf.id}" ${AppState.spis ? '' : 'disabled'}></div>`).join(''); 
         
         agendaView.querySelector('#file-inputs-container').innerHTML = fileInputsHTML;
@@ -554,7 +535,6 @@ document.addEventListener('DOMContentLoaded', async () => {
         agendaView.querySelector('#preview-container').innerHTML = `<div class="empty-state-placeholder"><i class="fas fa-file-import"></i><h4>Náhľad sa zobrazí po nahratí súborov</h4><p>Začnite nahratím vstupných súborov.</p></div>`;
         agendaView.querySelectorAll('.agenda-tab').forEach((tab, index) => { tab.classList.toggle('active', index === 0); if (tab.dataset.tab === 'generovanie') tab.classList.add('is-disabled'); }); agendaView.querySelectorAll('.agenda-tab-content').forEach((content, index) => { content.classList.toggle('active', index === 0); });
         
-        // Ak existuje spis, inicializujeme DocumentProcessor.
         if (AppState.spis && !AppState.processor) {
              initializeDocumentProcessor(agendaConfig);
         }
@@ -562,12 +542,11 @@ document.addEventListener('DOMContentLoaded', async () => {
         updateUIState();
     }
     
-    // === ZMENA: `initializeDocumentProcessor` teraz reaguje na chyby a inicializuje processor len raz ===
     function initializeDocumentProcessor(baseConfig) { 
-        if (AppState.processor) return; // Zabráni opätovnej inicializácii
+        if (AppState.processor) return;
         
         const fullConfig = { 
-            sectionPrefix: AppState.selectedAgendaKey, // Kľúčová zmena pre validátor
+            sectionPrefix: AppState.selectedAgendaKey,
             appState: AppState, 
             dataInputs: baseConfig.dataInputs, 
             previewElementId: 'preview-container', 
@@ -577,24 +556,20 @@ document.addEventListener('DOMContentLoaded', async () => {
                 const agendaView = document.getElementById('agenda-view'); 
                 const genTab = agendaView?.querySelector('.agenda-tab[data-tab="generovanie"]');
                 
-                // === ZAČIATOK KĽÚČOVEJ ZMENY: Aktualizácia stavu karty ===
                 const hasErrors = AppState.processor?.state?.hasValidationErrors || false;
 
                 if (genTab) { 
                     const filesReady = baseConfig.dataInputs.every(input => AppState.files[input.id]); 
-                    const shouldBeDisabled = !AppState.spis || !filesReady || hasErrors; // Kontrola aj na spis!
+                    const shouldBeDisabled = !AppState.spis || !filesReady || hasErrors;
                     genTab.classList.toggle('is-disabled', shouldBeDisabled); 
                 }
                 
-                // Aktualizácia farby drop zóny
                 AppState.processor.config.dataInputs.forEach(inputConf => {
                     const dropZone = document.getElementById(`drop-zone-${inputConf.id}`);
                     if (dropZone) {
-                        // Zelená farba sa pridá len vtedy, ak súbor existuje A nie sú chyby
                         dropZone.classList.toggle('loaded', AppState.files[inputConf.id] && !hasErrors);
                     }
                 });
-                // === KONIEC KĽÚČOVEJ ZMENY ===
                 
                 updateUIState(); 
             }, 
@@ -607,9 +582,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             }, 
             onMailGenerationComplete: () => { 
                 AppState.zoznamyPreObceGenerated = true; 
-                // === ZMENA: Použitie Asistenta ===
                 Asistent.log('Dáta pre e-maily obciam sú pripravené.');
-                // === KONIEC ZMENY ===
                 updateUIState(); 
             } 
         }; 
@@ -626,7 +599,6 @@ document.addEventListener('DOMContentLoaded', async () => {
             AppState.processor.state.data.psc = arrayBuffer; 
             AppState.processor.checkAndProcessData(); 
         } catch (error) { 
-            // === ZMENA: Použitie Asistenta ===
             Asistent.error('Chyba pri automatickom načítaní súboru PSČ.', error.message);
             showErrorModal({ message: 'Chyba pri automatickom načítaní súboru PSČ.', details: error.message }); 
         } 
@@ -636,19 +608,16 @@ document.addEventListener('DOMContentLoaded', async () => {
     const PREVIEW_THRESHOLD = 20; const PARTIAL_PREVIEW_COUNT = 10;
     function showMailListModal() { 
         if (!AppState.zoznamyPreObceGenerated) { 
-            // === ZMENA: Použitie Asistenta ===
             Asistent.warn("Táto možnosť je dostupná až po vygenerovaní zoznamov pre obce.");
             return; 
         } 
         const mailContent = AppState.municipalitiesMailContent; const ouEmails = MUNICIPALITY_EMAILS[AppState.selectedOU] || {}; let listHTML = '<ul style="list-style-type: none; padding: 0;">'; let hasContent = false; for (const obecName in mailContent) { hasContent = true; const recipientEmail = ouEmails[obecName]; const rowCount = mailContent[obecName].count; listHTML += `<li style="display: flex; align-items: center; justify-content: space-between; padding: 10px; border-bottom: 1px solid #eee;"><span><i class="fas fa-building" style="margin-right: 10px; color: #555;"></i>${obecName} <small>(${rowCount} záznamov)</small></span>`; if (recipientEmail) listHTML += `<button class="btn btn--primary prepare-mail-to-obec-btn" data-obec="${encodeURIComponent(obecName)}"><i class="fas fa-envelope"></i> Pripraviť e-mail</button>`; else listHTML += `<span style="color: var(--danger-color); font-size: 0.9em;"><i class="fas fa-exclamation-triangle"></i> Email nenájdený</span>`; listHTML += `</li>`; } listHTML += '</ul>'; if (!hasContent) { showModal({ title: 'Odoslanie pošty', content: '<p>Nenašli sa žiadne vygenerované dáta pre odoslanie.</p>'}); return; } showModal({ title: 'Odoslať zoznamy obciam', content: listHTML }); }
     const showEmailPreviewModal = (obecName) => { const mailContent = AppState.municipalitiesMailContent; const ouEmails = MUNICIPALITY_EMAILS[AppState.selectedOU] || {}; const emailData = mailContent[obecName]; if (!emailData) { showErrorModal({ message: 'Nenašli sa dáta pre e-mail pre zvolenú obec.'}); return; } const { html: htmlBody, count: rowCount } = emailData; const recipient = ouEmails[obecName]; const subject = `Zoznam subjektov pre obec ${obecName}`; AppState.tempMailContext = { htmlBody, recipient, subject, rowCount }; const modalTitle = `<div class="help-center-header"><i class="fas fa-envelope-open-text"></i><div class="title-group"><h3>Náhľad e-mailu</h3><span>Skontrolujte obsah a skopírujte ho do e-mailového klienta.</span></div></div>`; let previewContentHTML; if (rowCount > PREVIEW_THRESHOLD) previewContentHTML = `<div id="email-preview-content" style="border: 1px solid #e0e0e0; padding: 1rem; border-radius: 8px; background-color: #f9f9f9;"><p>Náhľad e-mailu pre obec <strong>${obecName}</strong> obsahuje veľký počet záznamov (<strong>${rowCount} riadkov</strong>).</p><p>Zobrazenie celej tabuľky by mohlo spomaliť Váš prehliadač. Tlačidlo nižšie skopírujte <strong>kompletné dáta</strong>.</p><button id="show-partial-preview-btn" class="btn btn--secondary" style="margin-top: 0.5rem;"><i class="fas fa-eye"></i> Zobraziť ukážku prvých ${PARTIAL_PREVIEW_COUNT} riadkov</button><div id="email-partial-preview" style="display: none; margin-top: 1rem; max-height: 25vh; overflow-y: auto;"></div></div>`; else previewContentHTML = `<div id="email-preview-content" style="border: 1px solid #e0e0e0; padding: 1rem; border-radius: 8px; background-color: #f9f9f9; max-height: 40vh; overflow-y: auto;">${htmlBody}</div>`; const modalContent = `<div style="font-size: 0.9em; display: flex; flex-direction: column; gap: 1rem;"><p><strong>Príjemca:</strong> ${recipient}</p><p><strong>Predmet:</strong> ${subject}</p><p><strong>Telo e-mailu:</strong></p>${previewContentHTML}<div style="background-color: var(--primary-color-light); padding: 1rem; border-radius: 8px; text-align: center;"><p style="margin-bottom: 0.75rem;">Kliknutím na tlačidlo sa <strong>celé telo e-mailu</strong> (všetkých ${rowCount} riadkov) skopíruje a otvorí sa Váš predvolený e-mailový program. Následne stačí obsah do tela e-mailu iba vložiť (Ctrl+V).</p><button id="copy-and-open-mail-btn" class="btn btn--primary"><i class="fas fa-copy"></i> Skopírovať telo a otvoriť e-mail</button></div></div>`; showModal({ title: modalTitle, content: modalContent, autoFocusSelector: '#copy-and-open-mail-btn' }); };
 
-    // === KĽÚČOVÁ ZMENA: NOVÁ FUNKCIA PRE ZOBRAZENIE NÁPOVEDY V MODÁLE ===
     /**
      * Zobrazí Centrum nápovedy v modálnom okne.
      */
     function showHelpCenterModal() {
-        // Krok 1: Pripravíme dynamické dáta
         const downloadListHTML = Object.entries(TEMPLATE_DOWNLOAD_FILES).map(([fileName, path]) => `
             <li class="download-item">
                 <i class="fas fa-file-excel"></i>
@@ -660,13 +629,11 @@ document.addEventListener('DOMContentLoaded', async () => {
         `).join('');
         const okresName = AppState.okresData ? AppState.okresData.Okresny_urad : 'Nevybraný';
 
-        // Krok 2: Zavoláme funkciu, ktorá vráti HTML obsah *pre vnútro modálu*
         const modalBodyContent = getHelpCenterHTML({ 
-            okresName: okresName, // Toto sa v modálnom okne nezobrazí, ale funkcia to vyžaduje
+            okresName: okresName,
             downloadListHTML: downloadListHTML 
         }); 
 
-        // Krok 3: Pripravíme titulok pre modálne okno
         const modalTitle = `
             <div class="help-center-header">
                 <i class="fas fa-life-ring" style="color: var(--primary-color);"></i>
@@ -676,20 +643,16 @@ document.addEventListener('DOMContentLoaded', async () => {
                 </div>
             </div>`;
 
-        // Krok 4: Zobrazíme modálne okno
         showModal({ title: modalTitle, content: modalBodyContent });
 
-        // Krok 5: Aktivujeme listenery pre OBSAH V MODÁLNOM OKNE
         const modalContainer = document.getElementById('modal-container');
         const modalBody = modalContainer.querySelector('.modal-body');
         if (modalBody) {
-            setupTabListeners(modalBody);      // Pre taby v nápovede
-            setupAccordionListeners(modalBody); // Pre akordeón v nápovede
+            setupTabListeners(modalBody);
+            setupAccordionListeners(modalBody);
         }
     }
-    // === KONIEC ZMENY ===
     
-    // setupTabListeners a setupAccordionListeners (bez zmeny)
     function setupTabListeners(parentElement = document) { if (!parentElement) return; const tabs = parentElement.querySelectorAll('.agenda-tab'); const contents = parentElement.querySelectorAll('.agenda-tab-content'); if (tabs.length === 0) return; tabs.forEach(tab => { tab.addEventListener('click', () => { if (tab.classList.contains('is-disabled')) { Asistent.warn('Táto karta bude dostupná po nahratí a spracovaní súborov.'); return; } tabs.forEach(t => t.classList.remove('active')); contents.forEach(c => c.classList.remove('active')); tab.classList.add('active'); const contentEl = parentElement.querySelector(`#tab-${tab.dataset.tab}`); if (contentEl) contentEl.classList.add('active'); }); }); }
     function setupAccordionListeners(parentElement = document) { if (!parentElement) return; const accordionItems = parentElement.querySelectorAll(`.accordion-card`); if (accordionItems.length === 0) return; accordionItems.forEach(item => { const header = item.querySelector('.accordion-header'); header.addEventListener('click', () => { item.classList.toggle('active'); }); }); }
 
@@ -702,7 +665,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         // --- 1. Zjednotený CLICK listener ---
         view.addEventListener('click', (e) => {
             const removeButton = e.target.closest('.btn-remove-file'); 
-            if (removeButton) { /* ... (kód pre remove file) ... */ 
+            if (removeButton) {
                  e.stopPropagation(); 
                  const inputId = removeButton.dataset.inputId; 
                  const input = document.getElementById(inputId); 
@@ -712,16 +675,13 @@ document.addEventListener('DOMContentLoaded', async () => {
                  delete AppState.files[inputId]; 
                  input.value = ''; 
                  
-                 // === ZMENA: Odstránime .loaded vždy pri odstránení súboru ===
                  if(dropZone) dropZone.classList.remove('loaded'); 
-                 // === KONIEC ZMENY ===
 
                  if (AppState.processor) { 
                     const inputConf = agendaConfigs[AppState.selectedAgendaKey]?.dataInputs.find(i => i.id === inputId); 
                     const stateKey = inputConf ? inputConf.stateKey : null; 
                     if (stateKey) delete AppState.processor.state.data[stateKey]; 
                     
-                    // Reset stavu spracovania
                     AppState.processor.state.processedData = null;
                     AppState.processor.state.hasValidationErrors = false;
                     
@@ -735,11 +695,10 @@ document.addEventListener('DOMContentLoaded', async () => {
                 return; 
             }
             
-            // === ZAČIATOK KĽÚČOVEJ ZMENY (REFAKTORING) ===
+            // === ZMENA: Úprava odovzdávania kontextu ===
             const genButton = e.target.closest('button[data-generator-key]:not(:disabled)'); 
             if (genButton) { 
                  e.stopPropagation(); 
-                 // Vynútime kontrolu prítomnosti procesora, aj keď disabled button by mal pomôcť
                  if (!AppState.processor || !AppState.spis) { 
                      Asistent.error('Chyba: Procesor alebo číslo spisu chýba.'); 
                      return; 
@@ -747,11 +706,14 @@ document.addEventListener('DOMContentLoaded', async () => {
                  const genKey = genButton.dataset.generatorKey; 
                  const genConf = agendaConfigs[AppState.selectedAgendaKey]?.generators[genKey]; 
                  
-                 // Vytvoríme čistý kontextový objekt namiesto odovzdávania celého AppState
+                 // Vytvoríme čistý kontextový objekt
                  const context = {
                      spis: AppState.spis,
                      okresData: AppState.okresData,
-                     selectedOU: AppState.selectedOU
+                     selectedOU: AppState.selectedOU,
+                     // === ZMENA: Pridali sme poštovné do kontextu ===
+                     postovne: AppState.postovne
+                     // ============================================
                  };
 
                  if (genConf) { 
@@ -764,35 +726,28 @@ document.addEventListener('DOMContentLoaded', async () => {
                  } 
                  return; 
             }
-            // === KONIEC KĽÚČOVEJ ZMENY (REFAKTORING) ===
+            // === KONIEC ZMENY ===
 
             const mailButton = e.target.closest('#send-mail-btn-vp'); 
-            if (mailButton) { /* ... (kód pre mail button) ... */ 
+            if (mailButton) {
                  e.stopPropagation(); showMailListModal(); return; 
             }
             const spisDisplay = e.target.closest('.spis-display--editable'); 
-            if (spisDisplay) { /* ... (kód pre edit spis) ... */ 
+            if (spisDisplay) {
                  e.stopPropagation(); 
                  const agendaKey = AppState.selectedAgendaKey; 
                  if (!agendaKey) return; 
                  const agendaConfig = agendaConfigs[agendaKey]; 
-                 
-                 // --- ZAČIATOK OPRAVY ---
                  const currentValue = AppState.spis || ''; 
-                 // --- KONIEC OPRAVY ---
-                 
                  showSpisModal(agendaKey, agendaConfig, currentValue); 
                  return; 
             }
             
-            // KĽÚČOVÁ ZMENA: Ak klikneme na neaktívnu drop zónu
             const disabledDropZone = e.target.closest('.file-drop-zone.disabled-overlay');
             if (disabledDropZone) {
                 e.preventDefault();
                 e.stopPropagation();
                 Asistent.warn('Nahrávanie dát je zablokované. Prosím, najprv zadajte číslo spisu.');
-                // Volanie modalu pri kliknutí na zónu je zbytočné, používateľ ho môže zavrieť.
-                // Ak chceme vynútiť zadanie, musíme to urobiť inak. Teraz ho len upozorníme.
                 return;
             }
 
@@ -814,13 +769,11 @@ document.addEventListener('DOMContentLoaded', async () => {
              const inputConf = agendaConfig.dataInputs.find(conf => conf.id === inputId); 
              const stateKey = inputConf ? inputConf.stateKey : null; 
              
-             // Ochrana pred nahrávaním bez spisu
              if (!AppState.spis) return null;
 
              return { input, inputId, dropZone, fileNameEl, fileSizeEl, stateKey }; 
         };
         
-        // === KĽÚČOVÁ ZMENA: Presunutá logika pridávania .loaded do onDataProcessed ===
         const handleFile = (file, config) => { 
             if (!file || !config || !config.stateKey) return; 
             
@@ -828,16 +781,13 @@ document.addEventListener('DOMContentLoaded', async () => {
             
             AppState.files[inputId] = file; 
             
-            // !!! DÔLEŽITÉ: Odstránime .loaded, kým neprebehne kontrola dát !!!
             if(dropZone) dropZone.classList.remove('loaded'); 
             
             if(fileNameEl) fileNameEl.textContent = file.name; 
             if(fileSizeEl) fileSizeEl.textContent = formatBytes(file.size); 
             
-            // Až tu spracujeme súbor a spustíme validáciu (ktorá volá onDataProcessed)
             if (AppState.processor) AppState.processor.processFile(file, stateKey); 
         };
-        // === KONIEC KĽÚČOVEJ ZMENY ===
 
         view.addEventListener('change', (e) => { 
              const input = e.target.closest('.file-input'); 
@@ -846,7 +796,6 @@ document.addEventListener('DOMContentLoaded', async () => {
              if (config && e.target.files.length > 0) handleFile(e.target.files[0], config); 
         }, { signal }); 
         
-        // Ochrana pred Drag&Drop bez spisu
         view.addEventListener('dragover', (e) => { 
              e.preventDefault(); 
              const dropZone = e.target.closest('.file-drop-zone'); 

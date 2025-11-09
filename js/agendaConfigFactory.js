@@ -23,18 +23,15 @@ export const agendaConfigs = {
             { id: 'zoznam-subjektov-vp', label: 'Zoznam subjektov (.xlsx)', stateKey: 'subjekty' }
             // Súbor PSC.xlsx sa načíta automaticky v main-wizard.js
         ],
-        // === ZMENA: Použitie importovanej funkcie ===
         dataProcessor: vpDataProcessor,
-        // ==========================================
         generators: {
             rozhodnutia: {
                 type: 'row',
                 buttonId: 'download-rozhodnutia-vp',
                 templateKey: 'rozhodnutia',
-                templatePath: TEMPLATE_PATHS.vp.rozhodnutie, // <-- ZMENA
+                templatePath: TEMPLATE_PATHS.vp.rozhodnutie,
                 title: 'Rozhodnutia',
                 zipName: 'rozhodnutia_VP.zip',
-                // === ZAČIATOK KĽÚČOVEJ ZMENY (REFAKTORING) ===
                 dataMapper: ({ row, columnMap, okresData, spis, selectedOU }) => {
                     const ico = row[columnMap['IČO']] || '';
                     return {
@@ -44,7 +41,6 @@ export const agendaConfigs = {
                         ID_OU: selectedOU.toLowerCase(),
                         ID_OU2: selectedOU,
                         OKR: okresData.OKR,
-                // === KONIEC KĽÚČOVEJ ZMENY (REFAKTORING) ===
                         poradoveCislo: row[columnMap['P.Č.']],
                         nazovDodavatela: row[columnMap['DODÁVATEĽ']],
                         adresa: row[columnMap['ADRESA']],
@@ -65,17 +61,15 @@ export const agendaConfigs = {
                 type: 'row',
                 buttonId: 'download-obalky-vp',
                 templateKey: 'obalky',
-                templatePath: TEMPLATE_PATHS.vp.obalky, // <-- ZMENA
+                templatePath: TEMPLATE_PATHS.vp.obalky,
                 title: 'Obálky',
                 zipName: 'obalky_VP.zip',
-                // === ZAČIATOK KĽÚČOVEJ ZMENY (REFAKTORING) ===
                  dataMapper: ({ row, columnMap, okresData, selectedOU, spis }) => {
                      const pscMatch = (row[columnMap['PSC_long']] || '').match(/^(\d{3}\s?\d{2})\s+(.*)/);
                      return {
                         ...okresData,
                         'spis-VP': spis,
                         ID_OU2: selectedOU,
-                // === KONIEC KĽÚČOVEJ ZMENY (REFAKTORING) ===
                         nazovDodavatela: row[columnMap['DODÁVATEĽ']],
                         adresa: `${row[columnMap['ULICA']] || ''} ${row[columnMap['Č. POPISNÉ']] || ''}`.trim(),
                         PSC: row[columnMap['PSC_long']],
@@ -92,16 +86,16 @@ export const agendaConfigs = {
                 type: 'batch',
                 buttonId: 'download-ph-vp',
                 templateKey: 'ph',
-                templatePath: TEMPLATE_PATHS.vp.ph, // <-- ZMENA
+                templatePath: TEMPLATE_PATHS.vp.ph,
                 batchSize: 8,
                 title: 'Podacie hárky',
                 zipName: 'podacieHarky_VP.zip',
-                // === ZAČIATOK KĽÚČOVEJ ZMENY (REFAKTORING) ===
-                dataMapper: ({ batch, columnMap, okresData, selectedOU }) => {
+                
+                // === ZMENA: Pridané 'postovne' a nahradené 'POSTOVNE' ===
+                dataMapper: ({ batch, columnMap, okresData, selectedOU, postovne }) => {
                     let totalCena = 0;
                     const batchRows = batch.map(row => {
-                        totalCena += POSTOVNE;
-                // === KONIEC KĽÚČOVEJ ZMENY (REFAKTORING) ===
+                        totalCena += postovne; // <-- ZMENA
                         return {
                             A: row[columnMap['P.Č.']],
                             B: row[columnMap['DODÁVATEĽ']],
@@ -110,44 +104,40 @@ export const agendaConfigs = {
                             E: row[columnMap['PCRD_short']],
                             F: row[columnMap['PSC_long']],
                             G: row[columnMap['ÚTVAR']],
-                            eur: POSTOVNE.toFixed(2)
+                            eur: postovne.toFixed(2) // <-- ZMENA
                         }
                     });
-                // === ZAČIATOK KĽÚČOVEJ ZMENY (REFAKTORING) ===
                     return {
                         ...okresData,
                         ID_OU: selectedOU,
-                // === KONIEC KĽÚČOVEJ ZMENY (REFAKTORING) ===
                         ID_PH: "VP",
                         cena: totalCena.toFixed(2),
                         rows: batchRows,
                     }
                 },
+                // === KONIEC ZMENY ===
+                
                 fileNameGenerator: (_, batchIndex) => `podaci_harok_VP_${batchIndex + 1}.docx`
             },
             zoznamyDoruc: {
                 type: 'groupBy',
                 buttonId: 'download-zoznamy-doruc-vp',
                 templateKey: 'zoznamyDoruc',
-                templatePath: TEMPLATE_PATHS.zoznamyDorucenie, // <-- ZMENA
+                templatePath: TEMPLATE_PATHS.zoznamyDorucenie,
                 groupByColumn: 'MESTO (OBEC)',
                 title: 'Zoznamy na doručovanie',
                 zipName: 'zoznamZasielokDorucenie_VP.zip',
-                // === ZAČIATOK KĽÚČOVEJ ZMENY (REFAKTORING) ===
                 dataMapper: ({ groupRows, columnMap, groupKey, okresData, selectedOU, spis }) => {
                     const rows = groupRows.map((row, index) => ({
-                // === KONIEC KĽÚČOVEJ ZMENY (REFAKTORING) ===
                         A: index + 1,
                         B: row[columnMap['DODÁVATEĽ']],
                         C: `${row[columnMap['ADRESA']]}, ${row[columnMap['PSC_long']]}`
                     }));
-                // === ZAČIATOK KĽÚČOVEJ ZMENY (REFAKTORING) ===
                     return {
                         ...okresData,
                         ID_OU2: selectedOU,
                         spis_OU: spis,
                         Okres: okresData.Okresny_urad.replace('Okresný úrad', '').trim(),
-                // === KONIEC KĽÚČOVEJ ZMENY (REFAKTORING) ===
                         obec: groupKey,
                         rows: rows,
                         uniqueRows: Array.from(new Set(rows.map(r => JSON.stringify(r)))).map(s => JSON.parse(s))
@@ -162,10 +152,7 @@ export const agendaConfigs = {
                 groupByColumn: 'MESTO (OBEC)',
                 title: 'Export zoznamov pre obce',
                 zipName: 'zoznamyVP_obce.zip',
-                // === ZAČIATOK KĽÚČOVEJ ZMENY (REFAKTORING) ===
-                // Tento mapper nepotreboval appState, takže žiadna zmena
                 dataMapper: ({ groupRows, columnMap, groupKey }) => {
-                // === KONIEC KĽÚČOVEJ ZMENY (REFAKTORING) ===
                     const data = groupRows.map((row, index) => ({
                         'P.č.': index + 1,
                         'Dodávateľ': row[columnMap['DODÁVATEĽ']],
@@ -178,7 +165,6 @@ export const agendaConfigs = {
                     return { data, cols, groupKey };
                 },
                 fileNameGenerator: (data) => `${data.groupKey.replace(/\s/g, '_')}_vp.xlsx`,
-                // === ZMENA: Pridaná šablóna e-mailu ===
                 emailTemplate: (tableHTML) => `
                     <p>Dobrý deň,</p>
                     <p style="margin-bottom: 1rem;">zasielame Vám zoznam subjektov, ktorým môže byť uložená v zmysle § 18 zákona č. 319/2002 Z. z. o obrane Slovenskej republiky povinnosť poskytnúť v čase vojny alebo vojnového stavu vecné prostriedky určené na plnenie úloh obrany štátu.</p>
@@ -186,7 +172,6 @@ export const agendaConfigs = {
                     ${tableHTML}
                     <p>S pozdravom</p>
                 `
-                // === KONIEC ZMENY ===
             },
         }
     },
@@ -199,35 +184,29 @@ export const agendaConfigs = {
         dataInputs: [
             { id: 'zoznam-subjektov-pp', label: 'Zoznam subjektov (.xlsx)', stateKey: 'subjekty' }
         ],
-        // === ZMENA: Použitie importovanej funkcie ===
         dataProcessor: ppDataProcessor,
-        // ==========================================
         generators: {
             rozhodnutia: {
                 type: 'row',
                 buttonId: 'download-rozhodnutia-pp',
                 templateKey: 'rozhodnutia',
-                templatePath: TEMPLATE_PATHS.pp.rozhodnutie, // <-- ZMENA
+                templatePath: TEMPLATE_PATHS.pp.rozhodnutie,
                 title: 'Rozhodnutia',
                 zipName: 'rozhodnutia_PP.zip',
-                // === ZAČIATOK KĽÚČOVEJ ZMENY (REFAKTORING) ===
                 dataMapper: ({ row, columnMap, okresData, spis, selectedOU }) => {
                     const titul = row[columnMap['Titul']] || '';
-                    // === KONIEC KĽÚČOVEJ ZMENY (REFAKTORING) ===
                     const meno = row[columnMap['Meno']] || '';
                     const priezvisko = row[columnMap['Priezvisko']] || '';
                     const adresaPlna = row[columnMap['Miesto pobytu / Adresa trvalého pobytu']] || '';
                     const miestoNastupu = row[columnMap['Miesto nástupu k vojenskému útvaru']] || '';
                     const utvarMatch = miestoNastupu.match(/\d+/);
-                // === ZAČIATOK KĽÚČOVEJ ZMENY (REFAKTORING) ===
                     return {
                         ...okresData,
                         Nazov_OU_upper: okresData.Okresny_urad.toUpperCase(),
                         'spis-PP': spis,
                         ID_OU: selectedOU.toLowerCase(),
-                        ID_OU2: selectedOU, // <-- PRIDANÉ PRE KONZISTENCIU/REFAKTORING
-                        OKR: okresData.OKR,  // <-- PRIDANÉ PRE KONZISTENCIU/REFAKTORING
-                // === KONIEC KĽÚČOVEJ ZMENY (REFAKTORING) ===
+                        ID_OU2: selectedOU,
+                        OKR: okresData.OKR,
                         menoPriezvisko: `${titul} ${meno} ${priezvisko}`.trim(),
                         adresa: adresaPlna,
                         PSC: '',
@@ -242,13 +221,11 @@ export const agendaConfigs = {
                 type: 'row',
                 buttonId: 'download-obalky-pp',
                 templateKey: 'obalky',
-                templatePath: TEMPLATE_PATHS.pp.obalky, // <-- ZMENA
+                templatePath: TEMPLATE_PATHS.pp.obalky,
                 title: 'Obálky',
                 zipName: 'obalky_PP.zip',
-                // === ZAČIATOK KĽÚČOVEJ ZMENY (REFAKTORING) ===
                 dataMapper: ({ row, columnMap, okresData, selectedOU, spis }) => {
                     const titul = row[columnMap['Titul']] || '';
-                // === KONIEC KĽÚČOVEJ ZMENY (REFAKTORING) ===
                     const meno = row[columnMap['Meno']] || '';
                     const priezvisko = row[columnMap['Priezvisko']] || '';
                     const adresaPlna = row[columnMap['Miesto pobytu / Adresa trvalého pobytu']] || '';
@@ -257,12 +234,10 @@ export const agendaConfigs = {
                         [adresaPlna, ''];
                     const miestoNastupu = row[columnMap['Miesto nástupu k vojenskému útvaru']] || '';
                     const utvarMatch = miestoNastupu.match(/\d+/);
-                // === ZAČIATOK KĽÚČOVEJ ZMENY (REFAKTORING) ===
                     return {
                         ...okresData,
                         'spis-PP': spis,
                         ID_OU2: selectedOU,
-                // === KONIEC KĽÚČOVEJ ZMENY (REFAKTORING) ===
                         menoPriezvisko: `${titul} ${meno} ${priezvisko}`.trim(),
                         adresa: adresa,
                         PSC: psc,
@@ -275,16 +250,16 @@ export const agendaConfigs = {
                 type: 'batch',
                 buttonId: 'download-ph-pp',
                 templateKey: 'ph',
-                templatePath: TEMPLATE_PATHS.pp.ph, // <-- ZMENA
+                templatePath: TEMPLATE_PATHS.pp.ph,
                 batchSize: 8,
                 title: 'Podacie hárky',
                 zipName: 'podacieHarky_PP.zip',
-                // === ZAČIATOK KĽÚČOVEJ ZMENY (REFAKTORING) ===
-                dataMapper: ({ batch, columnMap, okresData, selectedOU }) => {
+                
+                // === ZMENA: Pridané 'postovne' a nahradené 'POSTOVNE' ===
+                dataMapper: ({ batch, columnMap, okresData, selectedOU, postovne }) => {
                     let totalCena = 0;
                     const batchRows = batch.map(row => {
-                        totalCena += POSTOVNE;
-                // === KONIEC KĽÚČOVEJ ZMENY (REFAKTORING) ===
+                        totalCena += postovne; // <-- ZMENA
                         const adresaPlna = row[columnMap['Miesto pobytu / Adresa trvalého pobytu']] || '';
                         const [adresa, psc] = adresaPlna.lastIndexOf(',') !== -1 ? 
                             [adresaPlna.substring(0, adresaPlna.lastIndexOf(',')).trim(), adresaPlna.substring(adresaPlna.lastIndexOf(',') + 1).trim()] : 
@@ -300,33 +275,31 @@ export const agendaConfigs = {
                             E: '',
                             F: psc,
                             G: utvarMatch ? utvarMatch[0] : '',
-                            eur: POSTOVNE.toFixed(2)
+                            eur: postovne.toFixed(2) // <-- ZMENA
                         }
                     });
-                // === ZAČIATOK KĽÚČOVEJ ZMENY (REFAKTORING) ===
                     return {
                         ...okresData,
                         ID_OU: selectedOU,
-                // === KONIEC KĽÚČOVEJ ZMENY (REFAKTORING) ===
                         ID_PH: "PP",
                         cena: totalCena.toFixed(2),
                         rows: batchRows,
                     }
                 },
+                // === KONIEC ZMENY ===
+                
                 fileNameGenerator: (_, batchIndex) => `podaci_harok_PP_${batchIndex + 1}.docx`
             },
             zoznamyDoruc: {
                 type: 'groupBy',
                 buttonId: 'download-zoznamy-doruc-pp',
                 templateKey: 'zoznamyDoruc',
-                templatePath: TEMPLATE_PATHS.zoznamyDorucenie, // <-- ZMENA
+                templatePath: TEMPLATE_PATHS.zoznamyDorucenie,
                 groupByColumn: 'Obec',
                 title: 'Zoznamy na doručovanie',
                 zipName: 'zoznamZasielokDorucenie_PP.zip',
-                // === ZAČIATOK KĽÚČOVEJ ZMENY (REFAKTORING) ===
                 dataMapper: ({ groupRows, columnMap, groupKey, okresData, selectedOU, spis }) => {
                     const rows = groupRows.map((row, index) => {
-                // === KONIEC KĽÚČOVEJ ZMENY (REFAKTORING) ===
                          const titul = row[columnMap['Titul']] || '';
                          const meno = row[columnMap['Meno']] || '';
                          const priezvisko = row[columnMap['Priezvisko']] || '';
@@ -336,13 +309,11 @@ export const agendaConfigs = {
                             C: row[columnMap['Miesto pobytu / Adresa trvalého pobytu']]
                         }
                     });
-                // === ZAČIATOK KĽÚČOVEJ ZMENY (REFAKTORING) ===
                     return {
                         ...okresData,
                         ID_OU2: selectedOU,
                         spis_OU: spis,
                         Okres: okresData.Okresny_urad.replace('Okresný úrad', '').trim(),
-                // === KONIEC KĽÚČOVEJ ZMENY (REFAKTORING) ===
                         obec: groupKey,
                         rows: rows,
                         uniqueRows: Array.from(new Set(rows.map(r => JSON.stringify({B: r.B, C: r.C})))).map(s => JSON.parse(s))
@@ -361,28 +332,24 @@ export const agendaConfigs = {
         dataInputs: [
             { id: 'zoznam-subjektov-ub', label: 'Zoznam subjektov (.xlsx)', stateKey: 'subjekty' }
         ],
-        // === ZMENA: Použitie importovanej funkcie ===
         dataProcessor: ubDataProcessor,
-        // ==========================================
         generators: {
             rozhodnutia: {
                 type: 'row',
                 buttonId: 'download-rozhodnutia-ub',
                 templateKey: 'rozhodnutia',
-                templatePath: TEMPLATE_PATHS.ub.rozhodnutie, // <-- ZMENA
+                templatePath: TEMPLATE_PATHS.ub.rozhodnutie,
                 title: 'Rozhodnutia',
                 zipName: 'rozhodnutia_UB.zip',
-                // === ZAČIATOK KĽÚČOVEJ ZMENY (REFAKTORING) ===
-                dataMapper: ({ row, columnMap, okresData, spis, selectedOU, index }) => { // <-- Pridaný 'index'
+                dataMapper: ({ row, columnMap, okresData, spis, selectedOU, index }) => {
                     const ico = row[columnMap['IČO alebo rodné číslo']] || '';
                     return {
                         ...okresData,
                         Nazov_OU_upper: okresData.Okresny_urad.toUpperCase(),
                         'spis-UB': spis,
                         ID_OU: selectedOU.toLowerCase(),
-                        ID_OU2: selectedOU, // <-- PRIDANÉ PRE KONZISTENCIU/REFAKTORING
-                        OKR: okresData.OKR,  // <-- PRIDANÉ PRE KONZISTENCIU/REFAKTORING
-                // === KONIEC KĽÚČOVEJ ZMENY (REFAKTORING) ===
+                        ID_OU2: selectedOU,
+                        OKR: okresData.OKR,
                         Vlastnik: row[columnMap['obchodné meno alebo názov alebo meno a priezvisko']],
                         vAdresa: row[columnMap['sídlo alebo miesto pobytu']],
                         ICO: ico,
@@ -391,31 +358,27 @@ export const agendaConfigs = {
                         Ziadatel: row[columnMap['názov žiadateľa']],
                         zAdresa: row[columnMap['adresa žiadateľa']],
                         odsek: String(ico).includes('/') ? "ods. 3 písm. b)" : "ods.1 písm. d)",
-                        poradoveCislo: index + 1 // <-- Pridané poradové číslo pre istotu
+                        poradoveCislo: index + 1
                     };
                 },
-                fileNameGenerator: (data) => `UB_${(data.Vlastnik || `zaznam_${data.poradoveCislo}`).replace(/\s/g, '_')}_rozhodnutie.docx` // <-- Tu je oprava
+                fileNameGenerator: (data) => `UB_${(data.Vlastnik || `zaznam_${data.poradoveCislo}`).replace(/\s/g, '_')}_rozhodnutie.docx`
             },
             obalky: {
                 type: 'row',
                 buttonId: 'download-obalky-ub',
                 templateKey: 'obalky',
-                templatePath: TEMPLATE_PATHS.ub.obalky, // <-- ZMENA
+                templatePath: TEMPLATE_PATHS.ub.obalky,
                 title: 'Obálky',
                 zipName: 'obalky_UB.zip',
-                // === ZAČIATOK KĽÚČOVEJ ZMENY (REFAKTORING) ===
                 dataMapper: ({ row, columnMap, okresData, selectedOU, spis }) => {
                     const adresaPlna = row[columnMap['sídlo alebo miesto pobytu']] || '';
-                // === KONIEC KĽÚČOVEJ ZMENY (REFAKTORING) ===
                     const [adresa, psc] = adresaPlna.includes(',') ? adresaPlna.split(',').map(s => s.trim()) : [adresaPlna, ''];
                     const ziadatel = row[columnMap['názov žiadateľa']] || '';
                     const utvarMatch = ziadatel.match(/\d+/);
-                // === ZAČIATOK KĽÚČOVEJ ZMENY (REFAKTORING) ===
                     return {
                         ...okresData,
                         'spis-UB': spis,
                         ID_OU2: selectedOU,
-                // === KONIEC KĽÚČOVEJ ZMENY (REFAKTORING) ===
                         Vlastnik: row[columnMap['obchodné meno alebo názov alebo meno a priezvisko']],
                         adresa: adresa,
                         PSC: psc,
@@ -428,16 +391,16 @@ export const agendaConfigs = {
                 type: 'batch',
                 buttonId: 'download-ph-ub',
                 templateKey: 'ph',
-                templatePath: TEMPLATE_PATHS.ub.ph, // <-- ZMENA
+                templatePath: TEMPLATE_PATHS.ub.ph,
                 batchSize: 8,
                 title: 'Podacie hárky',
                 zipName: 'podacieHarky_UB.zip',
-                // === ZAČIATOK KĽÚČOVEJ ZMENY (REFAKTORING) ===
-                dataMapper: ({ batch, columnMap, okresData, selectedOU }) => {
+
+                // === ZMENA: Pridané 'postovne' a nahradené 'POSTOVNE' ===
+                dataMapper: ({ batch, columnMap, okresData, selectedOU, postovne }) => {
                     let totalCena = 0;
                     const batchRows = batch.map((row, index) => {
-                        totalCena += POSTOVNE;
-                // === KONIEC KĽÚČOVEJ ZMENY (REFAKTORING) ===
+                        totalCena += postovne; // <-- ZMENA
                         const adresaPlna = row[columnMap['sídlo alebo miesto pobytu']] || '';
                         const [adresa, psc] = adresaPlna.includes(',') ? adresaPlna.split(',').map(s => s.trim()) : [adresaPlna, ''];
                         const ziadatel = row[columnMap['názov žiadateľa']] || '';
@@ -450,44 +413,40 @@ export const agendaConfigs = {
                             E: '',
                             F: psc,
                             G: utvarMatch ? utvarMatch[0] : '',
-                            eur: POSTOVNE.toFixed(2)
+                            eur: postovne.toFixed(2) // <-- ZMENA
                         };
                     });
-                // === ZAČIATOK KĽÚČOVEJ ZMENY (REFAKTORING) ===
                     return {
                         ...okresData,
                         ID_OU: selectedOU,
-                // === KONIEC KĽÚČOVEJ ZMENY (REFAKTORING) ===
                         ID_PH: "UB",
                         cena: totalCena.toFixed(2),
                         rows: batchRows,
                     };
                 },
+                // === KONIEC ZMENY ===
+                
                 fileNameGenerator: (_, batchIndex) => `podaci_harok_UB_${batchIndex + 1}.docx`
             },
             zoznamyDoruc: {
                 type: 'groupBy',
                 buttonId: 'download-zoznamy-doruc-ub',
                 templateKey: 'zoznamyDoruc',
-                templatePath: TEMPLATE_PATHS.zoznamyDorucenie, // <-- ZMENA
+                templatePath: TEMPLATE_PATHS.zoznamyDorucenie,
                 groupByColumn: 'Obec',
                 title: 'Zoznamy na doručovanie',
                 zipName: 'zoznamZasielokDorucenie_UB.zip',
-                // === ZAČIATOK KĽÚČOVEJ ZMENY (REFAKTORING) ===
                 dataMapper: ({ groupRows, columnMap, groupKey, okresData, selectedOU, spis }) => {
                     const rows = groupRows.map((row, index) => ({
-                // === KONIEC KĽÚČOVEJ ZMENY (REFAKTORING) ===
                         A: index + 1,
                         B: row[columnMap['obchodné meno alebo názov alebo meno a priezvisko']],
                         C: row[columnMap['sídlo alebo miesto pobytu']]
                     }));
-                // === ZAČIATOK KĽÚČOVEJ ZMENY (REFAKTORING) ===
                     return {
                         ...okresData,
                         ID_OU2: selectedOU,
                         spis_OU: spis,
                         Okres: okresData.Okresny_urad.replace('Okresný úrad', '').trim(),
-                // === KONIEC KĽÚČOVEJ ZMENY (REFAKTORING) ===
                         obec: groupKey,
                         rows: rows,
                         uniqueRows: Array.from(new Set(rows.map(r => JSON.stringify(r)))).map(s => JSON.parse(s))
@@ -506,18 +465,15 @@ export const agendaConfigs = {
         dataInputs: [
             { id: 'zoznam-subjektov-dr', label: 'Zoznam subjektov (.xlsx)', stateKey: 'subjekty' }
         ],
-        // === ZMENA: Použitie importovanej funkcie ===
         dataProcessor: drDataProcessor,
-        // ==========================================
         generators: {
             rozhodnutia: {
                 type: 'row',
                 buttonId: 'download-rozhodnutia-dr',
                 templateKey: 'rozhodnutia',
-                templatePath: TEMPLATE_PATHS.dr.rozhodnutie, // <-- ZMENA
+                templatePath: TEMPLATE_PATHS.dr.rozhodnutie,
                 title: 'Rozhodnutia',
                 zipName: 'rozhodnutia_DR.zip',
-                // === ZAČIATOK KĽÚČOVEJ ZMENY (REFAKTORING) ===
                 dataMapper: ({ row, columnMap, okresData, spis, selectedOU }) => {
                     const findKey = (name) => Object.keys(columnMap).find(key => key.trim().toLowerCase() === name.toLowerCase());
 
@@ -526,9 +482,8 @@ export const agendaConfigs = {
                         Nazov_OU_upper: okresData.Okresny_urad.toUpperCase(),
                         'spis-DR': spis,
                         ID_OU: selectedOU.toLowerCase(),
-                        ID_OU2: selectedOU, // <-- PRIDANÉ PRE KONZISTENCIU/REFAKTORING
-                        OKR: okresData.OKR,  // <-- PRIDANÉ PRE KONZISTENCIU/REFAKTORING
-                // === KONIEC KĽÚČOVEJ ZMENY (REFAKTORING) ===
+                        ID_OU2: selectedOU,
+                        OKR: okresData.OKR,
                         menoPriezvisko: row[columnMap[findKey('Titul, meno a priezvisko')]],
                         adresa: row[columnMap[findKey('adresa trvalého pobytu')]],
                         RC: row[columnMap[findKey('rodné číslo')]],
@@ -542,13 +497,11 @@ export const agendaConfigs = {
                 type: 'row',
                 buttonId: 'download-obalky-dr',
                 templateKey: 'obalky',
-                templatePath: TEMPLATE_PATHS.dr.obalky, // <-- ZMENA
+                templatePath: TEMPLATE_PATHS.dr.obalky,
                 title: 'Obálky',
                 zipName: 'obalky_DR.zip',
-                // === ZAČIATOK KĽÚČOVEJ ZMENY (REFAKTORING) ===
                 dataMapper: ({ row, columnMap, okresData, selectedOU, spis }) => {
                     const findKey = (name) => Object.keys(columnMap).find(key => key.trim().toLowerCase() === name.toLowerCase());
-                // === KONIEC KĽÚČOVEJ ZMENY (REFAKTORING) ===
                     const adresaPlna = row[columnMap[findKey('adresa trvalého pobytu')]] || '';
                     
                     let adresa = adresaPlna;
@@ -558,12 +511,10 @@ export const agendaConfigs = {
                         adresa = adresaPlna.substring(0, lastCommaIndex).trim();
                         psc = adresaPlna.substring(lastCommaIndex + 1).trim();
                     }
-                // === ZAČIATOK KĽÚČOVEJ ZMENY (REFAKTORING) ===
                     return {
                         ...okresData,
                         'spis-DR': spis,
                         ID_OU2: selectedOU,
-                // === KONIEC KĽÚČOVEJ ZMENY (REFAKTORING) ===
                         menoPriezvisko: row[columnMap[findKey('Titul, meno a priezvisko')]],
                         adresa: adresa,
                         PSC: psc,
@@ -575,18 +526,18 @@ export const agendaConfigs = {
                 type: 'batch',
                 buttonId: 'download-ph-dr',
                 templateKey: 'ph',
-                templatePath: TEMPLATE_PATHS.dr.ph, // <-- ZMENA
+                templatePath: TEMPLATE_PATHS.dr.ph,
                 batchSize: 8,
                 title: 'Podacie hárky',
                 zipName: 'podacieHarky_DR.zip',
-                // === ZAČIATOK KĽÚČOVEJ ZMENY (REFAKTORING) ===
-                dataMapper: ({ batch, columnMap, okresData, selectedOU }) => {
+                
+                // === ZMENA: Pridané 'postovne' a nahradené 'POSTOVNE' ===
+                dataMapper: ({ batch, columnMap, okresData, selectedOU, postovne }) => {
                     let totalCena = 0;
                     const findKey = (name) => Object.keys(columnMap).find(key => key.trim().toLowerCase() === name.toLowerCase());
                     
                     const batchRows = batch.map((row, index) => {
-                        totalCena += POSTOVNE;
-                // === KONIEC KĽÚČOVEJ ZMENY (REFAKTORING) ===
+                        totalCena += postovne; // <-- ZMENA
                         const adresaPlna = row[columnMap[findKey('adresa trvalého pobytu')]] || '';
                         
                         let adresa = adresaPlna;
@@ -602,45 +553,41 @@ export const agendaConfigs = {
                             B: row[columnMap[findKey('Titul, meno a priezvisko')]],
                             C: adresa,
                             F: psc,
-                            eur: POSTOVNE.toFixed(2)
+                            eur: postovne.toFixed(2) // <-- ZMENA
                         };
                     });
-                // === ZAČIATOK KĽÚČOVEJ ZMENY (REFAKTORING) ===
                     return {
                         ...okresData,
                         ID_OU: selectedOU,
-                // === KONIEC KĽÚČOVEJ ZMENY (REFAKTORING) ===
                         ID_PH: "DR",
                         cena: totalCena.toFixed(2),
                         rows: batchRows,
                     };
                 },
+                // === KONIEC ZMENY ===
+                
                 fileNameGenerator: (_, batchIndex) => `podaci_harok_DR_${batchIndex + 1}.docx`
             },
             zoznamyDoruc: {
                 type: 'groupBy',
                 buttonId: 'download-zoznamy-doruc-dr',
                 templateKey: 'zoznamyDoruc',
-                templatePath: TEMPLATE_PATHS.zoznamyDorucenie, // <-- ZMENA
+                templatePath: TEMPLATE_PATHS.zoznamyDorucenie,
                 groupByColumn: 'Obec',
                 title: 'Zoznamy na doručovanie',
                 zipName: 'zoznamZasielokDorucenie_DR.zip',
-                // === ZAČIATOK KĽÚČOVEJ ZMENY (REFAKTORING) ===
                 dataMapper: ({ groupRows, columnMap, groupKey, okresData, selectedOU, spis }) => {
                     const findKey = (name) => Object.keys(columnMap).find(key => key.trim().toLowerCase() === name.toLowerCase());
                     const rows = groupRows.map((row, index) => ({
-                // === KONIEC KĽÚČOVEJ ZMENY (REFAKTORING) ===
                         A: index + 1,
                         B: row[columnMap[findKey('Titul, meno a priezvisko')]],
                         C: row[columnMap[findKey('adresa trvalého pobytu')]]
                     }));
-                // === ZAČIATOK KĽÚČOVEJ ZMENY (REFAKTORING) ===
                     return {
                         ...okresData,
                         ID_OU2: selectedOU,
                         spis_OU: spis,
                         Okres: okresData.Okresny_urad.replace('Okresný úrad', '').trim(),
-                // === KONIEC KĽÚČOVEJ ZMENY (REFAKTORING) ===
                         obec: groupKey,
                         rows: rows,
                         uniqueRows: Array.from(new Set(rows.map(r => JSON.stringify({B: r.B, C: r.C})))).map(s => JSON.parse(s))

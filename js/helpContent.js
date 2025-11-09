@@ -48,6 +48,18 @@ const FAQ_HTML = `
         </div>
         <div class="accordion-card">
             <div class="accordion-header">
+                <span><i class="fas fa-question-circle accordion-header-icon"></i> Dá sa zmeniť sadzba poštovného?</span>
+                <i class="fas fa-chevron-down accordion-header-icon"></i>
+            </div>
+            <div class="accordion-content">
+                <ul>
+                    <li>Áno, v aplikácii je definovaná sadzba poštovného. Poštovné sa dá jednoducho zmeniť v poli pre zmenu sadzby poštovného (ikona mincí).</li>
+                    <li>Pokiaľ hodnota poštovného zobrazuje aktuálnu sazbu nemusíte nič meniť.</li>
+                </ul>
+            </div>
+        </div>
+        <div class="accordion-card">
+            <div class="accordion-header">
                 <span><i class="fas fa-question-circle accordion-header-icon"></i> Kde nájdem tlačidlo na odoslanie mailov obciam?</span>
                 <i class="fas fa-chevron-down accordion-header-icon"></i>
             </div>

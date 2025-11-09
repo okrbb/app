@@ -118,7 +118,7 @@ export function startGuidedTour() {
                 <span class="tour-step-indicator">Krok 5 / 5</span>
                 <h3>Nástroje a pomoc</h3>
             </div>`,
-        text: 'Tu nájdete užitočné nástroje: Centrum nápovedy, opätovné spustenie tohto sprievodcu, zmazanie histórie Asistenta a možnosť resetovať celú aplikáciu.',
+        text: 'Tu nájdete užitočné nástroje: Sadzba poštovného, centrum nápovedy, opätovné spustenie tohto sprievodcu, zmazanie histórie Asistenta a možnosť resetovať celú aplikáciu.',
         attachTo: {
             element: '.header-actions',
             on: 'bottom'
