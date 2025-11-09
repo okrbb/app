@@ -78,7 +78,7 @@ body {
 /* .orb-1 { ... } */
 /* .orb-2 { ... } */
 /* .orb-3 { ... } */
-/* === KONIEC ODSTRÁNENIA ORBS === */
+/* === KONIEC ODSTRÁNIA ORBS === */
 
 
 /* === ZMENA: Sidebar je teraz "neviditeľný" fixný kontajner === */
@@ -798,15 +798,15 @@ body {
 }
 /* === KONIEC ZMENY === */
 
-/* === NOVÉ ŠTÝLY PRE ZOBRAZOVANIE TOOLTIPOV POD TLAČIDLAMI === */
+/* === ZMENA: ŠTÝLY PRE TOOLTIPY ZOVŠEOBECNENÉ === */
 
-/* Kontajner pre tlačidlá s tooltips */
-.header-actions .btn[data-tooltip] {
+/* Kontajner pre prvky s tooltips (tlačidlá aj select-item) */
+.header-actions > [data-tooltip] {
     position: relative;
 }
 
 /* Všeobecný štýl pre tooltip (pseudo-element ::after) */
-.header-actions .btn[data-tooltip]::after {
+.header-actions > [data-tooltip]::after {
     /* Umiestnenie pod tlačidlom: */
     top: 100%; /* Presunie začiatok tooltpu pod spodnú hranu tlačidla */
     margin-top: 10px; /* Pridá malú medzeru */
@@ -837,10 +837,11 @@ body {
 }
 
 /* Štýl pre zobrazenie tooltipu pri nabehnutí myšou */
-.header-actions .btn[data-tooltip]:hover::after {
+.header-actions > [data-tooltip]:hover::after {
     opacity: 1;
     visibility: visible;
 }
+/* === KONIEC ZMENY TOOLTIPOV === */
 
 /* Ak máte aj šípku, je potrebné upraviť aj pseudo-element ::before, 
 aby smeroval nahor namiesto nadol (napr. top: 100%;) */
@@ -864,6 +865,23 @@ aby smeroval nahor namiesto nadol (napr. top: 100%;) */
     color: var(--danger-color);
 }
 /* === KONIEC ZMENY === */
+
+/* === ZAČIATOK: ŠTÝLY PRE POŠTOVNÉ  === */
+.header-actions .select-item[data-tooltip="Aktuálna sadzba poštovného"] {
+    margin-right: var(--space-2); /* 0.5rem */
+}
+
+/* === TOTO PRIDAJTE: Skryje šípku špecificky pre poštovné === */
+.header-actions [data-tooltip="Aktuálna sadzba poštovného"] .select-item::after {
+    display: none;
+}
+/* === KONIEC PRIDANIA === */
+
+#postovne-input {
+    width: 90px;
+    padding: 0.3rem 0.5rem;
+}
+/* === KONIEC: ŠTÝLY PRE POŠTOVNÉ === */
 
 .file-drop-zone.disabled-overlay {
     position: relative;
