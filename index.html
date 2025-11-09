@@ -50,6 +50,14 @@
                     </div>
                 </div>
                 <div class="header-actions">
+                    
+                    <div data-tooltip="Aktuálna sadzba poštovného">
+                        <div class="select-item">
+                            <i class="fas fa-coins"></i>
+                            <input type="number" id="postovne-input" class="form-input" 
+                                step="0.01" min="0">
+                        </div>
+                    </div>
                     <button id="show-help-center" class="btn btn--icon" data-tooltip="Nápoveda"><i class="fas fa-question"></i></button>
                     <button id="reset-tour-btn" class="btn btn--icon" data-tooltip="Sprievodca"><i class="fas fa-info"></i></button>
                     <button id="header-clear-notifications-btn" class="btn btn--icon" data-tooltip="Vymazať Asistenta"><i class="fas fa-trash"></i></button>
@@ -134,7 +142,4 @@
     <script src="./js/Validator.js" type="module"></script>
     <script src="./js/main-wizard.js" type="module"></script>
 </body>
-
 </html>
-
-
