@@ -1,64 +1,145 @@
-index.html
-Hlavný súbor aplikácie, ktorý definuje celú viditeľnú štruktúru stránky. Obsahuje kostru pre bočný panel (.dashboard-sidebar) a hlavný obsah (.dashboard-content). Taktiež načítava všetky potrebné CSS štýly a JavaScriptové knižnice a skripty.
-_______________
-main-wizard.js	
-Toto je "mozog" celej aplikácie. Spúšťa sa po načítaní stránky a riadi globálny stav (AppState). Načítava dáta z JSON súborov, obsluhuje hlavné udalosti (výber OÚ, výber agendy, reset, zobrazenie nápovedy), inicializuje DocumentProcessor pre aktuálnu agendu a spravuje prepínanie medzi zobrazeniami (uvítacia obrazovka, agenda, nápoveda).
-_______________
-DocumentProcessor.js
-Kľúčová trieda, ktorá riadi celý proces spracovania a generovania dokumentov pre zvolenú agendu. Je zodpovedná za načítanie šablón (podľa potreby, "lazy-loading"), spracovanie nahratých súborov, zobrazenie náhľadu dát a samotné generovanie .docx alebo .xlsx súborov (po riadkoch, v dávkach alebo po skupinách).
-_______________
-config.js
-slúži ako centrálne úložisko pre globálne konštanty aplikácie, ktoré sa nemenia pri behu
-_______________
-agendaConfigFactory.js
-Definuje špecifickú logiku a nastavenia pre každú agendu (Vecné prostriedky, Pracovná povinnosť, atď.). Určuje, aké vstupné súbory sú potrebné, ktorý dátový procesor sa má použiť (napr. vpDataProcessor) a ako sa majú mapovať dáta pre každý generátor dokumentov.
-_______________
-helpContent.js	
-obsahuje statický HTML obsah pre jednotlivé karty v Centre nápovedy (ktoré sa zobrazuje v modálnom okne)
-_______________
-tour.js
-Inicializuje a spravuje interaktívneho sprievodcu aplikáciou pomocou knižnice Shepherd.js. Definuje jednotlivé kroky sprievodcu, ich texty a prvky, na ktoré sa majú zamerať. Ukladá do localStorage, či už bol sprievodca dokončený.
-_______________
-ui.js
-spravuje rôzne aspekty používateľského rozhrania (UI), najmä modálne okná, spinner a históriu udalostí
-_______________
-Validator.js
-modul určený na validáciu (kontrolu správnosti) dátových riadkov pochádzajúcich z nahraných Excel súborov
-_______________
-vpProcessor.js
-Dátový procesor pre agendu "Vecné prostriedky". Načíta dáta zo súborov 'subjekty' a 'psc', spojí ich a vygeneruje nové stĺpce ako ADRESA, PCRD_short a PSC_long.
-_______________
-ppProcessor.js	
-Dátový procesor pre agendu "Pracovná povinnosť". Nájde v Exceli riadok s hlavičkou (hľadá 'por. číslo') a extrahuje dáta, pričom pridáva nový stĺpec Obec na základe adresy.
-_______________
-ubProcessor.js
-Dátový procesor pre agendu "Ubytovanie". Nájde v Exceli riadok s hlavičkou (hľadá 'por. č.') a extrahuje dáta, pričom pridáva nový stĺpec Obec na základe adresy.
-_______________
-drProcessor.js
-Dátový procesor pre agendu "Doručovatelia". Nájde v Exceli riadok s hlavičkou (hľadá 'Por. č.') a extrahuje dáta, pričom pridáva nový stĺpec Obec na základe adresy trvalého pobytu.
- _______________
-styles.css
-Hlavný súbor CSS. Neobsahuje priame štýly, ale pomocou @import postupne načítava všetky ostatné súbory CSS v správnom poradí.
-_______________
-_variables.css
-Definuje globálne premenné (CSS Custom Properties) pre celú aplikáciu. Obsahuje paletu farieb (--primary-color, --accent-color), veľkosti tieňov (--box-shadow), zaoblenie rohov (--border-radius) a rýchlosť animácií (--transition).
-_______________
-_layout.css
-Definuje základné rozloženie (layout) aplikácie. Štýluje hlavný kontajner (.dashboard-container), bočný panel (.dashboard-sidebar), oblasť s obsahom (.dashboard-content) a štruktúru tabov (.agenda-tabs-container).
-_______________
-_components.css
-Obsahuje štýly pre všetky opakovane použiteľné komponenty. Patria sem tlačidlá (.btn), formulárové prvky (.form-input), zóny na nahrávanie súborov (.file-drop-zone), náhľadové tabuľky (.data-preview-table-wrapper), modálne okná (.modal-overlay) a nové karty pre centrum nápovedy (.accordion-card).
-_______________
-_notifications.css
-Definuje vzhľad všetkých notifikácií. Štýluje vyskakovacie "toast" notifikácie (.notification) a panel centra notifikácií, ktorý sa zobrazí po kliknutí na zvonček (.notification-center-panel).
-_______________
-_tour.css
-Poskytuje vlastné CSS štýly pre knižnicu Shepherd.js, aby vizuál sprievodcu (hlavička, text, tlačidlá) zodpovedal dizajnu aplikácie.
-_______________
-okresne_urady.json
-Statický dátový súbor vo formáte JSON. Obsahuje zoznam všetkých okresných úradov, ich adresy, kontaktné údaje a mená vedúcich, mapované podľa skratky (napr. "BB", "BS").
-_______________
-emaily_obci.json
-Statický dátový súbor vo formáte JSON. Obsahuje zoznam e-mailových adries pre jednotlivé obce, roztriedený podľa príslušného okresného úradu (napr. "BB", "BS").
+# Dokumentový Automat – Systém pre Správu Administratívnych Dokumentov
+
+Moderná webová aplikácia pre automatizované generovanie administratívnych dokumentov v oblasti obrany a civilnej ochrany na Slovensku. Aplikácia umožňuje spracovanie údajov, validáciu, hromadné generovanie dokumentov z šablón a manažment distribúcie zasielok.
+
+## 📋 Obsah
+
+- [Funkcie](#-funkcie)
+- [Technológie](#-technológie)
+- [Inštalácia](#-inštalácia)
+- [Štruktúra projektu](#-štruktúra-projektu)
+- [Používanie](#-používanie)
+- [Agendy](#-agendy)
+- [Konfigurácia](#-konfigurácia)
+- [Firebase integrácia](#-firebase-integrácia)
+- [Rozšírenie](#-rozšírenie)
+
+## ✨ Funkcie
+
+### Hlavné funkcionality
+
+- **Spracovanie XLSX súborov** – Import a validácia údajov zo súborov Excel
+- **Hromadné generovanie dokumentov** – Automatická tvorba rozhodnutí, obálok a podacích hárkov z DOCX šablón
+- **Validácia dát** – Real-time kontrola povinných polí, formátov a integrity údajov
+- **Export dokumentov** – Generovanie ZIP archívov s hromadnými dokumentmi
+- **Manažment distribúcie** – Zoznam zasielok na doručenie, export pre obce, e-mailové šablóny
+- **Firebase integrácia** – Cloudová databáza pre konfiguráciu, dynamické načítavanie poštovného
+- **Interaktívna nápoveda** – Vstavaný tour a centrum nápovedy s návodmi
+- **Responzívne UI** – Moderný dizajn s dark/light režimom a skeleton loadingom
+
+### Podporované agendy
+
+1. **Vecné prostriedky (VP)** – Evidencia vozidiel a techniky
+2. **Pracovná povinnosť (PP)** – Správa pracovnej povinnosti fyzických osôb
+3. **Ubytovanie (UB)** – Správa nehnuteľností na ubytovanie
+4. **Doručovatelia (DR)** – Evidencia doručovateľov
+
+## 🛠 Technológie
+
+### Frontend
+- **Vanilla JavaScript (ES6+)** – Modulárna architektúra bez frameworku
+- **CSS3** – Custom properties, Grid, Flexbox
+- **Markdown** – Formátovanie obsahu a nápovedy
+
+### Backend & Služby
+- **Firebase Firestore** – Cloudová databáza pre konfiguráciu
+- **Firebase Authentication** – Autentifikácia používateľov (pripravené)
+
+### Knižnice
+- **docxtemplater** – Generovanie DOCX dokumentov zo šablón
+- **PizZip** – Práca so ZIP archívmi
+- **SheetJS (xlsx)** – Spracovanie Excel súborov
+- **marked.js** – Konverzia Markdown na HTML
+- **DOMPurify** – Sanitizácia HTML obsahu
+
+
+## 🚀 Používanie
+
+### 1. Výber okresného úradu
+
+Pri prvom spustení vyberte okresný úrad z rozbaľovacieho zoznamu v hornej lište. Táto informácia sa automaticky doplní do všetkých generovaných dokumentov.
+
+### 2. Zadanie čísla spisu
+
+Zadajte číslo spisu vo formáte `ROK/číslo` (napr. `2025/123`). Toto číslo bude použité vo všetkých generovaných dokumentoch.
+
+### 3. Nahratie súborov
+
+Pre každú agendu nahrajte príslušný XLSX súbor:
+- Kliknite na upload zónu alebo presuňte súbor
+- Aplikácia automaticky validuje štruktúru a údaje
+- Zobrazí sa náhľad s označením chybných riadkov
+
+### 4. Generovanie dokumentov
+
+Po úspešnom nahratí a validácii:
+- Kliknite na tlačidlo príslušného generátora (Rozhodnutia, Obálky, Podacie hárky, atď.)
+- Dokumenty sa vygenerujú a automaticky stiahnu ako ZIP archív
+- Progress bar ukazuje priebeh generovania
+
+### 5. E-mailová distribúcia
+
+Pre export zoznamov pre obce:
+- Vygenerujte export cez tlačidlo "Export zoznamov pre obce"
+- Kliknite na ikonu obálky vedľa názvu obce
+- Skopírujte obsah e-mailu a odošlite cez váš e-mailový klient
+
+## 📋 Agendy
+
+### Vecné prostriedky (VP)
+
+**Účel:** Správa vozidiel a techniky určenej na plnenie úloh obrany štátu.
+
+**Generované dokumenty:**
+- Rozhodnutia o povinnosti poskytnúť vecné prostriedky
+- Obálky na doručenie
+- Podacie hárky (po 8 záznamoch)
+- Zoznamy na doručovanie (zoskupené podľa obcí)
+- Export pre obce (XLSX)
+
+**Povinné polia v XLSX:**
+- P.Č., DODÁVATEĽ, ADRESA, PSC_long, IČO, EČV, TOVÁRENSKÁ ZNAČKA, DRUH KAROSÉRIE, ÚTVAR, MIESTO DODANIA, PCRD_short, MESTO (OBEC)
+
+### Pracovná povinnosť (PP)
+
+**Účel:** Evidencia fyzických osôb s pracovnou povinnosťou.
+
+**Generované dokumenty:**
+- Rozhodnutia o pracovnej povinnosti
+- Obálky na doručenie
+- Podacie hárky
+- Zoznamy na doručovanie
+
+**Povinné polia v XLSX:**
+- Por. číslo, Titul, Meno, Priezvisko, Rodné číslo, Miesto pobytu / Adresa trvalého pobytu, Miesto nástupu k vojenskému útvaru, Obec
+
+### Ubytovanie (UB)
+
+**Účel:** Správa nehnuteľností určených na ubytovanie.
+
+**Generované dokumenty:**
+- Rozhodnutia o poskytnutí ubytovania
+- Obálky
+- Podacie hárky
+- Zoznamy na doručovanie
+
+**Povinné polia v XLSX:**
+- obchodné meno alebo názov alebo meno a priezvisko, IČO alebo rodné číslo, sídlo alebo miesto pobytu, názov (identifikácia) nehnuteľnosti, adresa, na ktorej sa nehnuteľnosť nachádza, názov žiadateľa, adresa žiadateľa, Obec
+
+### Doručovatelia (DR)
+
+**Účel:** Evidencia doručovateľov.
+
+**Generované dokumenty:**
+- Rozhodnutia
+- Obálky
+- Podacie hárky
+- Zoznamy na doručovanie
+
+## ⚙ Konfigurácia
+
+### Poštovné
+
+Poštovné sa načítava dynamicky z Firebase databázy z cesty `config/postovne`. Predvolená hodnota (fallback) je nastavená v `js/config.js` na **4.35 €**.
 
 
