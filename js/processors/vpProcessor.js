@@ -2,22 +2,46 @@
 
 /**
  * Spracováva vstupné dáta pre agendu Vecné Prostriedky (VP).
- * Očakáva 'subjekty' (XLSX) a 'psc' (XLSX) v objekte data.
+ * Očakáva 'subjekty' (XLSX) a 'psc' (JSON array) v objekte data.
  * Pridáva stĺpce ADRESA, PCRD_short a PSC_long.
  */
 export const vpDataProcessor = (data) => {
+    // ZMENA: data.psc teraz nie je súbor, ale JSON objekt (pole) z databázy
     if (!data || !data.subjekty || !data.psc) {
-        throw new Error("Chýbajú vstupné súbory. Zoznam subjektov je nutné nahrať a súbor PSČ by sa mal načítať automaticky.");
+        throw new Error("Chýbajú vstupné dáta. Zoznam subjektov je nutné nahrať a dáta PSČ by sa mali načítať automaticky z databázy.");
     }
 
     const wbSubjekty = XLSX.read(data.subjekty, { type: 'array' });
-    const wbPsc = XLSX.read(data.psc, { type: 'array' });
-
     const wsSubjekty = wbSubjekty.Sheets[wbSubjekty.SheetNames[0]];
-    const wsPsc = wbPsc.Sheets[wbPsc.SheetNames[0]];
 
     let jsonSubjekty = XLSX.utils.sheet_to_json(wsSubjekty, { header: 1, defval: '', blankrows: false });
-    const jsonPsc = XLSX.utils.sheet_to_json(wsPsc, { header: 1, defval: '', blankrows: false });
+    
+    // === NOVÁ LOGIKA PRE PSČ (JSON namiesto XLSX) ===
+    const pscList = data.psc; // Toto je pole objektov z Firebase
+    const pscMap = new Map();
+
+    // Iterujeme cez pole objektov
+    if (Array.isArray(pscList)) {
+        pscList.forEach(item => {
+            if (item.OBEC) {
+                pscMap.set(String(item.OBEC).toUpperCase(), { 
+                    psc: item.PSC, 
+                    dposta: item.DPOSTA 
+                });
+            }
+        });
+    } else {
+        // Fallback ak by to prišlo ako objekt s kľúčmi (ak by import zlyhal)
+        Object.values(pscList).forEach(item => {
+             if (item.OBEC) {
+                pscMap.set(String(item.OBEC).toUpperCase(), { 
+                    psc: item.PSC, 
+                    dposta: item.DPOSTA 
+                });
+            }
+        });
+    }
+    // === KONIEC NOVEJ LOGIKY ===
     
     let headerRowIndex = jsonSubjekty.findIndex(row => row.some(cell => String(cell).trim() === 'P.Č.'));
     if (headerRowIndex === -1) throw new Error('Nenašiel sa riadok s hlavičkou "P.Č."');
@@ -25,19 +49,6 @@ export const vpDataProcessor = (data) => {
     const mainHeaderRow = jsonSubjekty[headerRowIndex];
     const subHeaderRow = jsonSubjekty[headerRowIndex + 1];
 
-    const pscMap = new Map();
-    const pscHeaderRow = jsonPsc[0];
-    const obecIndexPsc = pscHeaderRow.findIndex(h => h === 'OBEC');
-    const pscIndexPsc = pscHeaderRow.findIndex(h => h === 'PSC');
-    const dpostaIndexPsc = pscHeaderRow.findIndex(h => h === 'DPOSTA');
-
-    for (let i = 1; i < jsonPsc.length; i++) {
-        const row = jsonPsc[i];
-        if (row[obecIndexPsc]) {
-            pscMap.set(String(row[obecIndexPsc]).toUpperCase(), { psc: row[pscIndexPsc], dposta: row[dpostaIndexPsc] });
-        }
-    }
-    
     let pcIndex = mainHeaderRow.findIndex(c => c === 'P.Č.');
     let dodavatelIndex = mainHeaderRow.findIndex(c => c === 'DODÁVATEĽ');
     let okresIndex = mainHeaderRow.findIndex(c => c === 'OKRES');
