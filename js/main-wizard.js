@@ -1,8 +1,9 @@
 // js/main-wizard.js
 
-// === ZMENA: Importujeme aj POSTOVNE ako východziu hodnotu ===
-import { TEMPLATE_PATHS, TEMPLATE_DOWNLOAD_FILES, POSTOVNE } from './config.js';
-// ==========================================================
+// === ZMENA: Importujeme DEFAULT_POSTOVNE ako fallback (premenované z POSTOVNE) ===
+import { TEMPLATE_PATHS, TEMPLATE_DOWNLOAD_FILES, POSTOVNE as DEFAULT_POSTOVNE } from './config.js';
+// === NOVÝ IMPORT: Firebase funkcie ===
+import { db, ref, get, set, child, onValue } from './firebaseConfig.js';
 
 import { Asistent, showErrorModal, showModal, formatBytes } from './ui.js';
 import { agendaConfigs } from './agendaConfigFactory.js';
@@ -20,47 +21,45 @@ const AppState = {
     files: {}, 
     municipalitiesMailContent: {}, 
     zoznamyPreObceGenerated: false,
-    currentView: 'welcome', // 'welcome', 'agenda' (už nie 'help')
+    currentView: 'welcome', // 'welcome', 'agenda'
     tempMailContext: {},
 
-    // === ZMENA: Pridaná hodnota poštovného do stavu ===
-    // Načíta z localStorage, ak neexistuje, použije východziu z config.js
-    postovne: parseFloat(localStorage.getItem('krokr-postovne')) || POSTOVNE
-    // ===============================================
+    // === ZMENA: Poštovné inicializujeme na default, aktualizuje sa automaticky z Firebase ===
+    postovne: DEFAULT_POSTOVNE
 };
 
 // === NOVÉ KONŠTANTY PRE UVÍTACIE SPRÁVY ===
 const WELCOME_HEADING_TEXT = 'Vitajte v aplikácii.';
 const WELCOME_PROMPT_DEFAULT = 'Prosím, začnite výberom okresného úradu v hornom paneli.';
 const WELCOME_PROMPT_OU_SELECTED = 'Prosím, začnite výberom agendy v paneli vľavo.';
-// ===========================================
 
-// Načítanie statických JSON dát
+// === ZMENA: Načítanie dát z Firebase namiesto lokálnych JSON súborov ===
 async function loadStaticData() {
+    const dbRef = ref(db);
+    Asistent.log('Pripájam sa k databáze OKR-OS...');
+
     try {
-        const [ouResponse, emailResponse] = await Promise.all([
-            fetch('DATA/okresne_urady.json'),
-            fetch('DATA/emaily_obci.json')
+        // Paralelné načítanie OÚ a Emailov z Realtime Database
+        const [ouSnapshot, emailSnapshot] = await Promise.all([
+            get(child(dbRef, 'okresne_urady')),
+            get(child(dbRef, 'emaily_obci'))
         ]);
 
-        if (!ouResponse.ok) throw new Error(`Nepodarilo sa načítať okresne_urady.json: ${ouResponse.statusText}`);
-        if (!emailResponse.ok) throw new Error(`Nepodarilo sa načítať emaily_obci.json: ${emailResponse.statusText}`);
+        if (!ouSnapshot.exists()) throw new Error("Databáza neobsahuje 'okresne_urady'.");
+        if (!emailSnapshot.exists()) throw new Error("Databáza neobsahuje 'emaily_obci'.");
 
-        const ouData = await ouResponse.json();
-        const emailData = await emailResponse.json();
+        const ouData = ouSnapshot.val();
+        const emailData = emailSnapshot.val();
         
+        Asistent.success('Dáta boli úspešne načítané z cloudu.');
         return { ouData, emailData };
     } catch (error) {
-        console.error("Chyba pri načítaní statických dát:", error);
-        if (typeof showErrorModal === 'function') {
-            showErrorModal({ 
-                title: 'Kritická chyba aplikácie', 
-                message: 'Nepodarilo sa načítať základné konfiguračné súbory (dáta OÚ alebo e-maily obcí). Aplikácia nemôže pokračovať. Skúste obnoviť stránku (F5).',
-                details: error.message
-            });
-        } else {
-            alert(`Kritická chyba: Nepodarilo sa načítať dáta. ${error.message}`);
-        }
+        console.error("Firebase Error:", error);
+        showErrorModal({ 
+            title: 'Chyba pripojenia k databáze', 
+            message: 'Nepodarilo sa stiahnuť dáta z Firebase. Skontrolujte pripojenie na internet.',
+            details: error.message
+        });
         return null;
     }
 }
@@ -87,7 +86,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     const spinner = document.getElementById('spinner-overlay');
     if (spinner) spinner.style.display = 'flex';
 
-    // Inicializácia dát
+    // Inicializácia dát (teraz z Firebase)
     const staticData = await loadStaticData();
     if (!staticData) {
          if (spinner) spinner.style.display = 'none';
@@ -114,11 +113,34 @@ document.addEventListener('DOMContentLoaded', async () => {
     setWelcomeMessages(WELCOME_HEADING_TEXT, WELCOME_PROMPT_DEFAULT); 
 
     Asistent.init(notificationList);
-    Asistent.log('Asistent bol inicializovaný.');
+    // Asistent.log('Asistent bol inicializovaný.'); // Už logujeme v loadStaticData
     
     initializeFromLocalStorage();
     startGuidedTour();
     updateUIState(); 
+
+    // === NOVÉ: Real-time listener pre poštovné ===
+    // Počúvame zmeny na 'config/postovne'
+    const postovneRef = ref(db, 'config/postovne');
+    onValue(postovneRef, (snapshot) => {
+        const val = snapshot.val();
+        if (val !== null) {
+            const numVal = parseFloat(val);
+            if (!isNaN(numVal)) {
+                AppState.postovne = numVal;
+                const input = document.getElementById('postovne-input');
+                if (input) {
+                    // Ak používateľ práve needituje pole (nie je focusnuté), aktualizujeme ho
+                    if (document.activeElement !== input) {
+                        input.value = AppState.postovne.toFixed(2);
+                        // Vizuálna indikácia zmeny (napr. krátke bliknutie okraja)
+                        input.style.borderColor = 'var(--primary-color)';
+                        setTimeout(() => input.style.borderColor = '', 1000);
+                    }
+                }
+            }
+        }
+    });
 
     // Pripojenie statických listenerov
     setupStaticListeners();
@@ -178,26 +200,32 @@ document.addEventListener('DOMContentLoaded', async () => {
         
         helpCenterBtn.addEventListener('click', () => {
              if (dashboardContent) dashboardContent.scrollTo({ top: 0, behavior: 'smooth' });
-             showHelpCenterModal(); // Namiesto renderHelpCenterView
+             showHelpCenterModal(); 
         });
         
         resetTourBtn.addEventListener('click', () => { localStorage.removeItem('krokr-tour-completed'); startGuidedTour(); });
 
-        // === ZMENA: Pridaný listener pre pole s poštovným ===
+        // === ZMENA: Listener pre zmenu poštovného (Zápis do Firebase) ===
         const postovneInput = document.getElementById('postovne-input');
         if (postovneInput) {
-            // Nastavíme počiatočnú hodnotu poľa z AppState
+            // Nastavíme počiatočnú hodnotu poľa z AppState (ktorý má buď default, alebo už načítané z DB)
             postovneInput.value = AppState.postovne.toFixed(2);
             
-            // Pri zmene (keď používateľ odíde z poľa)
             postovneInput.addEventListener('change', (e) => {
                 const newValue = parseFloat(e.target.value);
                 
-                // Overíme, či je to platné číslo
                 if (!isNaN(newValue) && newValue >= 0) {
-                    AppState.postovne = newValue;
-                    localStorage.setItem('krokr-postovne', newValue.toString());
-                    Asistent.success(`Poštovné bolo nastavené na ${newValue.toFixed(2)} €.`);
+                    // ZÁPIS DO FIREBASE
+                    set(ref(db, 'config/postovne'), newValue)
+                        .then(() => {
+                            Asistent.success(`Nová sadzba poštovného (${newValue.toFixed(2)} €) bola uložená do databázy.`);
+                            // AppState.postovne sa aktualizuje automaticky cez onValue listener
+                        })
+                        .catch((error) => {
+                            Asistent.error('Nepodarilo sa uložiť poštovné.', error.message);
+                            // Vrátime starú hodnotu v UI ak zlyhá zápis
+                            e.target.value = AppState.postovne.toFixed(2);
+                        });
                 } else {
                     // Ak je vstup neplatný, vrátime ho na pôvodnú hodnotu
                     e.target.value = AppState.postovne.toFixed(2);
@@ -210,7 +238,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         // Listenery pre modálne okná 
         const modalContainer = document.getElementById('modal-container');
         
-        // --- NOVÝ EVENT PRE ZATVORENIE MODÁLU ---
+        // --- EVENT PRE ZATVORENIE MODÁLU ---
         modalContainer.addEventListener('modal-close', (e) => {
              if (AppState.selectedAgendaKey && !AppState.spis) {
                  Asistent.warn('Číslo spisu nebolo zadané. Pre nahrávanie dát je číslo spisu povinné.');
@@ -272,12 +300,12 @@ document.addEventListener('DOMContentLoaded', async () => {
         modalContainer.addEventListener('click', async (e) => { const target = e.target.closest('#copy-and-open-mail-btn'); if (!target) return; const { htmlBody, recipient, subject, rowCount } = AppState.tempMailContext; if (!htmlBody) { showErrorModal({ message: 'Chyba: Nenašiel sa kontext e-mailu.' }); return; } try { const blob = new Blob([htmlBody], { type: 'text/html' }); const clipboardItem = new ClipboardItem({ 'text/html': blob }); await navigator.clipboard.write([clipboardItem]); Asistent.success(`Telo e-mailu (${rowCount} riadkov) bolo skopírované!`); const mailtoLink = `mailto:${recipient}?subject=${encodeURIComponent(subject)}`; window.location.href = mailtoLink; } catch (err) { showErrorModal({ message: 'Nepodarilo sa automaticky skopírovať obsah.', details: 'Prosím, označte text v náhľade manuálne (Ctrl+A, Ctrl+C) a pokračujte. Chyba: ' + err.message }); } });
         modalContainer.addEventListener('click', (e) => { const target = e.target.closest('#show-partial-preview-btn'); if (!target) return; const { htmlBody } = AppState.tempMailContext; const partialPreviewContainer = modalContainer.querySelector('#email-partial-preview'); if (!htmlBody || !partialPreviewContainer) return; const tempDiv = document.createElement('div'); tempDiv.innerHTML = htmlBody; const table = tempDiv.querySelector('table'); if (table) { const rows = Array.from(table.querySelectorAll('tbody > tr')); const previewRows = rows.slice(0, 10); const newTbody = document.createElement('tbody'); previewRows.forEach(row => newTbody.appendChild(row.cloneNode(true))); table.querySelector('tbody').replaceWith(newTbody); partialPreviewContainer.innerHTML = tempDiv.innerHTML; partialPreviewContainer.style.display = 'block'; target.style.display = 'none'; } });
         
-        // Statické taby pre #agenda-view (iba prepínanie)
+        // Statické taby pre #agenda-view
         const agendaView = document.getElementById('agenda-view');
         if (agendaView) setupTabListeners(agendaView);
     }
 
-    // Riadenie stavu UI (upravené pre stav spisu)
+    // Riadenie stavu UI
     function updateUIState() { 
         const ouSelected = !!AppState.selectedOU; 
         
@@ -378,21 +406,15 @@ document.addEventListener('DOMContentLoaded', async () => {
         localStorage.removeItem('krokr-lastOU'); 
         localStorage.removeItem('krokr-lastAgenda'); 
         
-        // === ZMENA: Resetujeme aj poštovné z localStorage ===
-        localStorage.removeItem('krokr-postovne');
-        // =================================================
+        // localStorage pre poštovné už nepoužívame
 
         resetAgendaState(); 
         AppState.selectedOU = null; 
         AppState.okresData = null; 
         
-        // === ZMENA: Pri resete nastavíme AppState.postovne na východziu hodnotu ===
-        AppState.postovne = POSTOVNE;
-        const postovneInput = document.getElementById('postovne-input');
-        if (postovneInput) {
-            postovneInput.value = AppState.postovne.toFixed(2);
-        }
-        // =====================================================================
+        // AppState.postovne NENULUJEME manuálne,
+        // pretože je riadené cez onValue z Firebase.
+        // Ak sa má resetovať len lokálny state, hodnota z DB je správna.
 
         const ouLabel = document.getElementById('okresny-urad-label'); 
         const ouOptions = document.getElementById('okresny-urad-options'); 
@@ -588,23 +610,28 @@ document.addEventListener('DOMContentLoaded', async () => {
         }; 
         AppState.processor = new DocumentProcessor(fullConfig); 
         AppState.processor.loadTemplates(); 
-        if (AppState.selectedAgendaKey === 'vp') loadPscFile(); 
+        if (AppState.selectedAgendaKey === 'vp') loadPscData(); 
     }
     
-    async function loadPscFile() { 
+    async function loadPscData() { 
         try { 
-            const response = await fetch(TEMPLATE_PATHS.pscFile); 
-            if (!response.ok) throw new Error(`Súbor PSČ sa nepodarilo načítať: ${response.statusText}`); 
-            const arrayBuffer = await response.arrayBuffer(); 
-            AppState.processor.state.data.psc = arrayBuffer; 
+            const dbRef = ref(db);
+            Asistent.log("Načítavam číselník PSČ z databázy...");
+            const snapshot = await get(child(dbRef, 'psc'));
+            
+            if (!snapshot.exists()) throw new Error("Databáza neobsahuje uzol 'psc'.");
+            
+            // Uložíme dáta priamo (žiaden ArrayBuffer, rovno JSON objekt)
+            AppState.processor.state.data.psc = snapshot.val(); 
             AppState.processor.checkAndProcessData(); 
+            Asistent.success("Číselník PSČ bol úspešne načítaný.");
         } catch (error) { 
-            Asistent.error('Chyba pri automatickom načítaní súboru PSČ.', error.message);
-            showErrorModal({ message: 'Chyba pri automatickom načítaní súboru PSČ.', details: error.message }); 
+            Asistent.error('Chyba pri automatickom načítaní PSČ z databázy.', error.message);
+            showErrorModal({ message: 'Chyba pri načítaní PSČ.', details: error.message }); 
         } 
     }
     
-    // Logika pre odosielanie mailov (bez zmeny)
+    // Logika pre odosielanie mailov
     const PREVIEW_THRESHOLD = 20; const PARTIAL_PREVIEW_COUNT = 10;
     function showMailListModal() { 
         if (!AppState.zoznamyPreObceGenerated) { 
@@ -695,7 +722,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                 return; 
             }
             
-            // === ZMENA: Úprava odovzdávania kontextu ===
+            // Konfigurácia generátorov (prenos poštovného do kontextu)
             const genButton = e.target.closest('button[data-generator-key]:not(:disabled)'); 
             if (genButton) { 
                  e.stopPropagation(); 
@@ -711,9 +738,8 @@ document.addEventListener('DOMContentLoaded', async () => {
                      spis: AppState.spis,
                      okresData: AppState.okresData,
                      selectedOU: AppState.selectedOU,
-                     // === ZMENA: Pridali sme poštovné do kontextu ===
+                     // === ZMENA: Pridali sme poštovné do kontextu pre procesor ===
                      postovne: AppState.postovne
-                     // ============================================
                  };
 
                  if (genConf) { 
@@ -726,7 +752,6 @@ document.addEventListener('DOMContentLoaded', async () => {
                  } 
                  return; 
             }
-            // === KONIEC ZMENY ===
 
             const mailButton = e.target.closest('#send-mail-btn-vp'); 
             if (mailButton) {
@@ -817,7 +842,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         }, { signal }); 
     }
     
-    // Inicializácia z localStorage (bez zmeny)
+    // Inicializácia z localStorage (bez zmeny pre OÚ a Agendu)
     function initializeFromLocalStorage() { 
         const lastOU = localStorage.getItem('krokr-lastOU'); 
         if (lastOU) { 

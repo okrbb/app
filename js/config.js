@@ -1,15 +1,18 @@
 // js/config.js
-export const POSTOVNE = 4.35;
 
-// OBJEKT OKRESNE_URADY BOL PREMIESTNENÝ DO DATA/okresne_urady.json
+/**
+ * Základná sadzba poštovného.
+ * Toto je len FALLBACK hodnota. Aktuálna hodnota sa načítava z Firebase databázy (config/postovne).
+ */
+export const POSTOVNE = 4.35;
 
 /**
  * Centrálna konfigurácia ciest k šablónam dokumentov.
+ * Tieto súbory ostávajú uložené lokálne na serveri/hostingu.
  */
 export const TEMPLATE_PATHS = {
     // Spoločné šablóny
     zoznamyDorucenie: 'DATA/TEMP_ZOZNAMY_DORUCENIE.docx',
-    pscFile: 'DATA/PSC.xlsx',
     
     // Vecné prostriedky (VP)
     vp: {
