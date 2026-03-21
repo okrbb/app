@@ -8,6 +8,9 @@
  * Podporuje dva formáty hlavičky:
  *  - FORMÁT A (dvojriadkový): riadok 7 = hlavné stĺpce, riadok 8 = podhlavička (ULICA, Č. POPISNÉ, MESTO (OBEC))
  *  - FORMÁT B (jednoriadkový): všetky stĺpce vrátane ULICA, Č. POPISNÉ, MESTO (OBEC) sú v jednom riadku
+ *
+ * Stĺpec OKRES je voliteľný – ak chýba vo vstupnom súbore, okres sa dohľadá
+ * automaticky z PSC.xlsx podľa názvu mesta/obce.
  */
 export const vpDataProcessor = (data) => {
     if (!data || !data.subjekty || !data.psc) {
@@ -23,17 +26,23 @@ export const vpDataProcessor = (data) => {
     let jsonSubjekty = XLSX.utils.sheet_to_json(wsSubjekty, { header: 1, defval: '', blankrows: false });
     const jsonPsc = XLSX.utils.sheet_to_json(wsPsc, { header: 1, defval: '', blankrows: false });
 
-    // --- Zostavenie PSČ mapy ---
+    // --- Zostavenie PSČ mapy (PSC, DPOSTA a voliteľne OKRES) ---
     const pscMap = new Map();
     const pscHeaderRow = jsonPsc[0];
-    const obecIndexPsc = pscHeaderRow.findIndex(h => h === 'OBEC');
-    const pscIndexPsc = pscHeaderRow.findIndex(h => h === 'PSC');
+    const obecIndexPsc  = pscHeaderRow.findIndex(h => h === 'OBEC');
+    const pscIndexPsc   = pscHeaderRow.findIndex(h => h === 'PSC');
     const dpostaIndexPsc = pscHeaderRow.findIndex(h => h === 'DPOSTA');
+    // OKRES je v PSC.xlsx voliteľný – ak stĺpec neexistuje, bude -1
+    const okresIndexPsc = pscHeaderRow.findIndex(h => String(h).trim().toLowerCase() === 'okres');
 
     for (let i = 1; i < jsonPsc.length; i++) {
         const row = jsonPsc[i];
         if (row[obecIndexPsc]) {
-            pscMap.set(String(row[obecIndexPsc]).toUpperCase(), { psc: row[pscIndexPsc], dposta: row[dpostaIndexPsc] });
+            pscMap.set(String(row[obecIndexPsc]).toUpperCase(), {
+                psc:   row[pscIndexPsc],
+                dposta: row[dpostaIndexPsc],
+                okres: okresIndexPsc !== -1 ? (row[okresIndexPsc] || '') : ''
+            });
         }
     }
 
@@ -60,10 +69,11 @@ export const vpDataProcessor = (data) => {
     // --- Indexy stĺpcov spoločné pre oba formáty (hľadáme v mainHeaderRow) ---
     const pcIndex            = findIdx(mainHeaderRow, 'P.Č.');
     const dodavatelIndex     = findIdx(mainHeaderRow, 'DODÁVATEĽ');
-    const okresIndex         = findIdx(mainHeaderRow, 'OKRES');
+    const okresIndex         = findIdx(mainHeaderRow, 'OKRES'); // môže byť -1
     const pcrdIndex          = findIdx(mainHeaderRow, 'PČRD');
     const icoIndex           = findIdx(mainHeaderRow, 'IČO');
     const znackaIndex        = findIdx(mainHeaderRow, 'TOVÁRENSKÁ ZNAČKA');
+    const typIndex           = findIdx(mainHeaderRow, 'TYP'); // záloha pre TOVÁRENSKÁ ZNAČKA
     const karoseriaIndex     = findIdx(mainHeaderRow, 'DRUH KAROSÉRIE');
     const ecvIndex           = findIdx(mainHeaderRow, 'EČV');
     const utvarIndex         = findIdx(mainHeaderRow, 'ÚTVAR');
@@ -117,10 +127,27 @@ export const vpDataProcessor = (data) => {
         }
 
         let psc_long = '';
+        let okres = '';
         if (mesto && pscMap.has(mesto.toUpperCase())) {
             const pscInfo = pscMap.get(mesto.toUpperCase());
             psc_long = `${pscInfo.psc} ${pscInfo.dposta}`;
+            // Ak vstupný súbor obsahuje OKRES, použijeme ho; inak dohľadáme z PSČ mapy
+            okres = (okresIndex !== -1 && row[okresIndex])
+                ? String(row[okresIndex]).trim()
+                : pscInfo.okres;
+        } else if (okresIndex !== -1) {
+            // Mesto sa nenašlo v PSČ mape, ale stĺpec OKRES existuje – použijeme jeho hodnotu
+            okres = String(row[okresIndex] || '').trim();
         }
+
+        // TOVÁRENSKÁ ZNAČKA – ak stĺpec chýba, odvodí sa z TYP (hodnota po prvú čiarku)
+        let znacka = '';
+        if (znackaIndex !== -1 && row[znackaIndex]) {
+            znacka = String(row[znackaIndex]).trim();
+        } else if (typIndex !== -1 && row[typIndex]) {
+            znacka = String(row[typIndex]).split(',')[0].trim();
+        }
+
 
         const newRow = new Array(newHeader.length).fill('');
         newRow[0]  = row[pcIndex];
@@ -128,10 +155,10 @@ export const vpDataProcessor = (data) => {
         newRow[2]  = ulica;
         newRow[3]  = popisne;
         newRow[4]  = mesto;
-        newRow[5]  = row[okresIndex]         || '';
+        newRow[5]  = okres;
         newRow[6]  = adresa;
         newRow[7]  = row[icoIndex]           || '';
-        newRow[8]  = row[znackaIndex]        || '';
+        newRow[8]  = znacka;
         newRow[9]  = row[karoseriaIndex]     || '';
         newRow[10] = row[ecvIndex]           || '';
         newRow[11] = row[utvarIndex]         || '';
